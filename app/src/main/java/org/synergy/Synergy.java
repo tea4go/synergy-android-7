@@ -103,7 +103,7 @@ public class Synergy extends Activity {
 			}
 		});
         
-        Log.setLogLevel (Log.Level.DEBUG5);
+        Log.setLogLevel (Log.Level.DEBUG);
 		TastyToast.makeText(getApplicationContext(), "Client Starting", TastyToast.LENGTH_LONG, TastyToast.DEFAULT);
 		Log.debug ("Client starting....");
 
@@ -140,9 +140,10 @@ public class Synergy extends Activity {
         	 
         	Display display = wm.getDefaultDisplay ();
         	basicScreen.setShape (display.getWidth (), display.getHeight ());
-        	
-        	
-        	//PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
+			Log.debug ("Resulotion: " + display.getWidth()+ " x " + display.getHeight());
+
+
+			//PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
 			Log.debug ("Hostname: " + clientName);
             
 			Client client = new Client (getApplicationContext(), clientName, serverAddress, socketFactory, null, basicScreen);

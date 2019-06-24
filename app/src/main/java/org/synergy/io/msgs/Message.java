@@ -118,7 +118,7 @@ public abstract class Message {
       * Write the message header and the message data
       */
     public final void write (DataOutputStream dout) throws IOException {
-    	Log.debug2 ("Sending: " + this.toString ());
+    	Log.debug5 ("Message: Sending: " + this.toString ());
     	
         // Write the message data to the byte array.  
     	//  Subclasses MUST override this function 
@@ -127,7 +127,7 @@ public abstract class Message {
         // Set the message header size based on how much data
         //  has been written to the byte array stream
         header.setDataSize (dataStream.size ());
-        Log.debug2 ("Sending Header: " + header);
+        Log.debug5 ("Message: Sending Header: " + header);
                 
         // Write out the header and the message data
         header.write (dout);

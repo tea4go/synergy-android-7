@@ -121,7 +121,7 @@ public class ServerProxy {
 	protected Result parseHandshakeMessage () throws IOException {
 		// Read the header
 		MessageHeader header = new MessageHeader (din);
-		//Log.debug ("Received Header: " + header);
+		Log.debug ("Received Header: " + header);
 
 		switch (header.getType ()) {
 		case QINFO:
@@ -290,7 +290,7 @@ public class ServerProxy {
 				case OKAY:
 					break;
 				case UNKNOWN:
-					Log.error ("invalid message from server");
+					Log.error ("invalid message from server: "+din.readUTF());
 					return;
 				case DISCONNECT:
 					return;

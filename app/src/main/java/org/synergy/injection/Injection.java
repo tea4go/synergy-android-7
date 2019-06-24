@@ -35,6 +35,7 @@ public final class Injection {
 			process.waitFor ();
 			Log.debug ("Access to /dev/uinput granted");
 		} catch (Exception e) {
+			Log.error(e.getStackTrace().toString());
 			e.printStackTrace ();
 		}
 	}
