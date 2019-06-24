@@ -19,6 +19,8 @@
  */
 package org.synergy.io.msgs;
 
+import android.util.Log;
+
 public class InvalidMessageException extends Exception {
 	private static final long serialVersionUID = 1889503614899371915L;
 

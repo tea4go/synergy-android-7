@@ -19,6 +19,8 @@
  */
 package org.synergy.io.msgs;
 
+import android.util.Log;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 
@@ -43,7 +45,7 @@ public class HelloMessage extends Message {
     public HelloMessage (DataInputStream din) throws InvalidMessageException {
         try {
         	MessageDataInputStream mdin = new MessageDataInputStream(din);
-        	
+
 	        int packetSize = mdin.readInt ();
 	
 	        if (packetSize != HELLO_MESSAGE_SIZE) {
@@ -51,13 +53,15 @@ public class HelloMessage extends Message {
 	        }
 
         	// Read in "Synergy" string
-        	mdin.readExpectedString("Synergy");
+        	mdin.readExpectedString("Barrier");
         	
         	// Read in the major and minor protocol versions
         	majorVersion = mdin.readShort ();
         	minorVersion = mdin.readShort ();
         } catch (IOException e) {
-        	throw new InvalidMessageException (e.getMessage());
+			Log.d("Barrier", "wrong hello message: "+e.getMessage());
+
+			throw new InvalidMessageException (e.getMessage());
         }
     }
     

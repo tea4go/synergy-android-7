@@ -19,19 +19,6 @@
  */
 package org.synergy;
 
-import org.synergy.base.Event;
-import org.synergy.base.EventQueue;
-import org.synergy.base.EventType;
-import org.synergy.base.Log;
-import org.synergy.client.Client;
-import org.synergy.common.screens.BasicScreen;
-//import org.synergy.common.screens.PlatformIndependentScreen;
-import org.synergy.injection.Injection;
-import org.synergy.net.NetworkAddress;
-import org.synergy.net.SocketFactoryInterface;
-import org.synergy.net.SynergyConnectTask;
-import org.synergy.net.TCPSocketFactory;
-
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -40,6 +27,22 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+
+import com.sdsmdg.tastytoast.TastyToast;
+
+import org.synergy.base.Event;
+import org.synergy.base.EventQueue;
+import org.synergy.base.EventType;
+import org.synergy.base.Log;
+import org.synergy.client.Client;
+import org.synergy.common.screens.BasicScreen;
+import org.synergy.injection.Injection;
+import org.synergy.net.NetworkAddress;
+import org.synergy.net.SocketFactoryInterface;
+import org.synergy.net.SynergyConnectTask;
+import org.synergy.net.TCPSocketFactory;
+
+//import org.synergy.common.screens.PlatformIndependentScreen;
 
 public class Synergy extends Activity {
 	
@@ -59,9 +62,9 @@ public class Synergy extends Activity {
 			try {
 		        Event event = new Event ();
 		        event = EventQueue.getInstance ().getEvent (event, -1.0);
-		        Log.note ("Event grabbed");
+				Log.note ("Event grabbed");
 		        while (event.getType () != EventType.QUIT && mainLoopThread == Thread.currentThread()) {
-		            EventQueue.getInstance ().dispatchEvent (event);
+					EventQueue.getInstance ().dispatchEvent (event);
 		            // TODO event.deleteData ();
 		            event = EventQueue.getInstance ().getEvent (event, -1.0);
 		            Log.note ("Event grabbed");
@@ -96,42 +99,42 @@ public class Synergy extends Activity {
         connectButton.setOnClickListener (new View.OnClickListener() {
 			public void onClick (View arg) {
 				connect ();
+
 			}
 		});
         
-        Log.setLogLevel (Log.Level.INFO);
-        
-        Log.debug ("Client starting....");
+        Log.setLogLevel (Log.Level.DEBUG5);
+		TastyToast.makeText(getApplicationContext(), "Client Starting", TastyToast.LENGTH_LONG, TastyToast.DEFAULT);
+		Log.debug ("Client starting....");
 
         try {
 			Injection.setPermissionsForInputDevice();
 		} catch (Exception e) {
-			// TODO handle exception
 		}
     }
     
     private void connect () {
-    	
-    	String clientName = ((EditText) findViewById (R.id.clientNameEditText)).getText().toString();
+		String clientName = ((EditText) findViewById (R.id.clientNameEditText)).getText().toString();
     	String ipAddress = ((EditText) findViewById (R.id.serverHostEditText)).getText().toString();
     	String portStr = ((EditText) findViewById(R.id.serverPortEditText)).getText().toString();
     	int port = Integer.parseInt(portStr);
     	String deviceName = ((EditText) findViewById(R.id.inputDeviceEditText)).getText().toString();
-    	
-    	SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+
+		SharedPreferences preferences = getPreferences(MODE_PRIVATE);
     	SharedPreferences.Editor preferencesEditor = preferences.edit();
     	preferencesEditor.putString(PROP_clientName, clientName);
     	preferencesEditor.putString(PROP_serverHost, ipAddress);
     	preferencesEditor.putString(PROP_deviceName, deviceName);
-    	preferencesEditor.commit();
+    	preferencesEditor.apply();
     	
         try {
         	SocketFactoryInterface socketFactory = new TCPSocketFactory();
        	   	NetworkAddress serverAddress = new NetworkAddress (ipAddress, port);
 
+
         	Injection.startInjection(deviceName);
 
-        	BasicScreen basicScreen = new BasicScreen();
+			BasicScreen basicScreen = new BasicScreen();
         	
         	WindowManager wm = getWindowManager();
         	 
@@ -140,20 +143,22 @@ public class Synergy extends Activity {
         	
         	
         	//PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
-            
-            Log.debug ("Hostname: " + clientName);
+			Log.debug ("Hostname: " + clientName);
             
 			Client client = new Client (getApplicationContext(), clientName, serverAddress, socketFactory, null, basicScreen);
 			new SynergyConnectTask().execute(client);
+			TastyToast.makeText(getApplicationContext(), "Device Connected", TastyToast.LENGTH_LONG, TastyToast.SUCCESS);
 
 			if (mainLoopThread == null) {
+
 				mainLoopThread = new MainLoopThread();
+
 				mainLoopThread.start();
 			}
 			
         } catch (Exception e) {
-        	e.printStackTrace();
-        	((EditText) findViewById (R.id.outputEditText)).setText("Connection Failed.");
+			TastyToast.makeText(getApplicationContext(), "Connection Failed", TastyToast.LENGTH_LONG, TastyToast.ERROR);
+			e.printStackTrace();
         }
     }
 }

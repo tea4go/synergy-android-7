@@ -19,11 +19,11 @@
  */
 package org.synergy.base;
 
+import org.synergy.base.exceptions.InvalidMessageException;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-
-import org.synergy.base.exceptions.InvalidMessageException;
 
 public class EventQueue implements EventQueueInterface {
 
@@ -50,12 +50,12 @@ public class EventQueue implements EventQueueInterface {
 	}
 	private EventQueue () {
         this.buffer = new SimpleEventQueueBuffer ();
-        
+
         new HashMap <Integer, String> ();
-        this.events = new HashMap <Integer, Event> ();
-        this.oldEventIDs = new LinkedList<Integer>();
+        this.events = new HashMap<>();
+        this.oldEventIDs = new LinkedList<>();
         
-        this.handlers = new HashMap <Object, Map <EventType, EventJobInterface>> ();
+        this.handlers = new HashMap<>();
     }
 
     private static void interrupt () {
@@ -122,7 +122,8 @@ public class EventQueue implements EventQueueInterface {
 	 * Dispatch an event
 	 */
     public boolean dispatchEvent (final Event event) {
-    	Log.note (event.toString ());
+
+    	Log.note ("dispatching: "+event.toString ());
     	
         Object target = event.getTarget ();
         
@@ -155,7 +156,7 @@ public class EventQueue implements EventQueueInterface {
 		    break;
 		}
 
-        if (event.getFlags ().equals (Event.Flags.DELIVER_IMMEDIATELY) == true) {
+        if (event.getFlags().equals(Event.Flags.DELIVER_IMMEDIATELY)) {
             dispatchEvent (event);
 
             // TODO: Questionable
@@ -186,7 +187,7 @@ public class EventQueue implements EventQueueInterface {
     	
     	if (handlerMap == null) {
     		// First handler for this event type
-    		handlerMap = new HashMap <EventType, EventJobInterface> ();
+    		handlerMap = new HashMap<>();
     		handlers.put (target, handlerMap);
     	}
         handlers.get (target).put (type, handler);
