@@ -4,11 +4,11 @@
  * Copyright (C) 2010 The Synergy Project
  * Copyright (C) 2009 The Synergy+ Project
  * Copyright (C) 2002 Chris Schoeneman
- * 
+ *
  * This package is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * found in the file COPYING that should have accompanied this file.
- * 
+ *
  * This package is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,12 +21,12 @@ package org.synergy.io;
 
 
 /**
-  * @author Shaun Patterson
-  *
-  * There's probably a lot better way to do this...
-  * but we can rework it in the future
+ * @author Shaun Patterson
+ * <p>
+ * There's probably a lot better way to do this...
+ * but we can rework it in the future
  */
-public class PacketStream  {
+public class PacketStream {
 
     /*public PacketStream (Stream stream) {
         this.stream = stream;

@@ -23,7 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.synergy.base.Log;
+import org.synergy.base.utils.Log;
 import org.synergy.io.MessageDataOutputStream;
 
 /*public interface Message <T> {

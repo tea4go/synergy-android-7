@@ -4,11 +4,11 @@
  * Copyright (C) 2010 The Synergy Project
  * Copyright (C) 2009 The Synergy+ Project
  * Copyright (C) 2002 Chris Schoeneman
- * 
+ *
  * This package is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * found in the file COPYING that should have accompanied this file.
- * 
+ *
  * This package is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -23,27 +23,27 @@ import android.graphics.*;
 
 public class ClientInfo {
 
-	Rect screenPosition;
-	Point cursorPos;
+    Rect screenPosition;
+    Point cursorPos;
 
-	public ClientInfo(Rect screenPosition, Point cursorPos) {
-		this.screenPosition = screenPosition;
-		this.cursorPos = cursorPos;
-	}
+    public ClientInfo(Rect screenPosition, Point cursorPos) {
+        this.screenPosition = screenPosition;
+        this.cursorPos = cursorPos;
+    }
 
-	public Rect getScreenPosition() {
-		return screenPosition;
-	}
+    public Rect getScreenPosition() {
+        return screenPosition;
+    }
 
-	public void setScreenPosition(Rect screenPosition) {
-		this.screenPosition = screenPosition;
-	}
+    public void setScreenPosition(Rect screenPosition) {
+        this.screenPosition = screenPosition;
+    }
 
-	public Point getCursorPos() {
-		return cursorPos;
-	}
+    public Point getCursorPos() {
+        return cursorPos;
+    }
 
-	public void setCursorPos(Point cursorPos) {
-		this.cursorPos = cursorPos;
-	}
+    public void setCursorPos(Point cursorPos) {
+        this.cursorPos = cursorPos;
+    }
 }

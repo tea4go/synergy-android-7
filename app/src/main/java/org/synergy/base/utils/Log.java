@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base;
+package org.synergy.base.utils;
 
 import java.util.ArrayList;
 
@@ -70,7 +70,7 @@ public class Log {
     	this.outputters = new ArrayList <LogOutputterInterface> ();
     	this.alwaysOutputters = new ArrayList <LogOutputterInterface> ();
     	
-        this.insert (new AndroidLogOutputter (), false);
+        this.insert (new AndroidLogOutputter(), false);
     }
 
     private void insert (LogOutputterInterface outputter, boolean alwayAtHead) {

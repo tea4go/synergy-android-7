@@ -4,11 +4,11 @@
  * Copyright (C) 2010 The Synergy Project
  * Copyright (C) 2009 The Synergy+ Project
  * Copyright (C) 2002 Chris Schoeneman
- * 
+ *
  * This package is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * found in the file COPYING that should have accompanied this file.
- * 
+ *
  * This package is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,20 +21,20 @@ package org.synergy.net;
 
 public class TCPListenSocket extends ListenSocketInterface {
 
-	public DataSocketInterface accept () {
-		return null;
-	}
-	
-	public void bind (final NetworkAddress address) {
-		
-	}
-	
-	public void close () {
-	
-	}
-	
-	public Object getEventTarget () {
-		return this;
-	}
-	
+    public DataSocketInterface accept() {
+        return null;
+    }
+
+    public void bind(final NetworkAddress address) {
+
+    }
+
+    public void close() {
+
+    }
+
+    public Object getEventTarget() {
+        return this;
+    }
+
 }

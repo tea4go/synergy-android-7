@@ -4,11 +4,11 @@
  * Copyright (C) 2010 The Synergy Project
  * Copyright (C) 2009 The Synergy+ Project
  * Copyright (C) 2002 Chris Schoeneman
- * 
+ *
  * This package is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * found in the file COPYING that should have accompanied this file.
- * 
+ *
  * This package is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,11 +24,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.synergy.base.Event;
-import org.synergy.base.EventJobInterface;
+import org.synergy.base.interfaces.EventJobInterface;
 import org.synergy.base.EventQueue;
 import org.synergy.base.EventQueueTimer;
 import org.synergy.base.EventType;
-import org.synergy.base.Log;
+import org.synergy.base.utils.Log;
 import org.synergy.io.Stream;
 import org.synergy.io.msgs.ClipboardDataMessage;
 import org.synergy.io.msgs.ClipboardMessage;
@@ -51,378 +51,380 @@ public class ServerProxy {
     private static final double KEEP_ALIVE_UNTIL_DEATH = 3.0;
     private static final double KEEP_ALIVE_RATE = 3.0;
 
-	/**
-	 * Enumeration and Interface for parsing function
-	 */
-	private enum Result {
-		OKAY, UNKNOWN, DISCONNECT
-	};
+    /**
+     * Enumeration and Interface for parsing function
+     */
+    private enum Result {
+        OKAY, UNKNOWN, DISCONNECT
+    }
 
-	// To define what should parse and process messages
-	private interface Parser {
-		public Result parse () throws IOException;
-	}
+    // To define what should parse and process messages
+    private interface Parser {
+        public Result parse() throws IOException;
+    }
 
-	private Client client;
-	private Stream stream;
+    private Client client;
+    private Stream stream;
 
-	private Integer seqNum;
+    private Integer seqNum;
 
-	private Parser parser;
+    private Parser parser;
 
-	// TODO KeyModifierTable
+    // TODO KeyModifierTable
 
-	private double keepAliveAlarm;
-	private EventQueueTimer keepAliveAlarmTimer;
+    private double keepAliveAlarm;
+    private EventQueueTimer keepAliveAlarmTimer;
 
-	private DataInputStream din;
-	private DataOutputStream dout;
+    private DataInputStream din;
+    private DataOutputStream dout;
 
-	public ServerProxy (Client client, Stream stream) {
-		this.client = client;
-		this.stream = stream;
+    public ServerProxy(Client client, Stream stream) {
+        this.client = client;
+        this.stream = stream;
 
-		this.seqNum = 0;
+        this.seqNum = 0;
 
-		this.keepAliveAlarm = 0.0;
-		this.keepAliveAlarmTimer = null;
+        this.keepAliveAlarm = 0.0;
+        this.keepAliveAlarmTimer = null;
 
-		assert (client != null);
-		assert (stream != null);
+        assert (client != null);
+        assert (stream != null);
 
-		// TODO Key modifier table
+        // TODO Key modifier table
 
-		// handle data on stream
-		EventQueue.getInstance ().adoptHandler (EventType.STREAM_INPUT_READY, stream.getEventTarget (),
-				new EventJobInterface () {
-					public void run (Event event) {
-						handleData ();
-					}
-				});
+        // handle data on stream
+        EventQueue.getInstance().adoptHandler(EventType.STREAM_INPUT_READY, stream.getEventTarget(),
+                new EventJobInterface() {
+                    public void run(Event event) {
+                        handleData();
+                    }
+                });
 
-		// send heartbeat
-        setKeepAliveRate (KEEP_ALIVE_RATE);
-        
-		parser = new Parser () {
-			public Result parse () throws IOException {
-				return parseHandshakeMessage ();
-			}
-		};
+        // send heartbeat
+        setKeepAliveRate(KEEP_ALIVE_RATE);
 
-	}
+        parser = new Parser() {
+            public Result parse() throws IOException {
+                return parseHandshakeMessage();
+            }
+        };
 
-	protected enum EResult {
-		OKAY, UNKNOWN, DISCONNECT;
-	}
+    }
+
+    protected enum EResult {
+        OKAY, UNKNOWN, DISCONNECT;
+    }
 
     /**
-      * Handle messages before handshake is complete
-      */
-	protected Result parseHandshakeMessage () throws IOException {
-		// Read the header
-		MessageHeader header = new MessageHeader (din);
-		Log.debug ("Received Header: " + header);
+     * Handle messages before handshake is complete
+     */
+    protected Result parseHandshakeMessage() throws IOException {
+        // Read the header
+        MessageHeader header = new MessageHeader(din);
+        Log.debug("Received Header: " + header);
 
-		switch (header.getType ()) {
-		case QINFO:
-			//queryInfo (new QueryInfoMessage ());
-			queryInfo ();
-			break;
-		case CINFOACK:
-			infoAcknowledgment ();
-			break;
-		case DSETOPTIONS:
-			SetOptionsMessage setOptionsMessage = new SetOptionsMessage (header, din);
+        switch (header.getType()) {
+            case QINFO:
+                //queryInfo (new QueryInfoMessage ());
+                queryInfo();
+                break;
+            case CINFOACK:
+                infoAcknowledgment();
+                break;
+            case DSETOPTIONS:
+                SetOptionsMessage setOptionsMessage = new SetOptionsMessage(header, din);
 
-			setOptions (setOptionsMessage);
+                setOptions(setOptionsMessage);
 
-			// handshake is complete
-			Log.debug ("Handshake is complete");
-			parser = new Parser () {
-				public Result parse () throws IOException {
-					return parseMessage ();
-				}
-			};
+                // handshake is complete
+                Log.debug("Handshake is complete");
+                parser = new Parser() {
+                    public Result parse() throws IOException {
+                        return parseMessage();
+                    }
+                };
 
-			client.handshakeComplete ();
-			break;
-		case CRESETOPTIONS:
-			resetOptions (new ResetOptionsMessage (din));
-			break;
-		default:
-			return Result.UNKNOWN;
-		}
-		
-		return Result.OKAY;
-	}
+                client.handshakeComplete();
+                break;
+            case CRESETOPTIONS:
+                resetOptions(new ResetOptionsMessage(din));
+                break;
+            default:
+                return Result.UNKNOWN;
+        }
+
+        return Result.OKAY;
+    }
 
     /**
-      * Handle messages after the handshake is complete
-      */
-	byte[] messageDataBuffer = new byte[256];
-	protected Result parseMessage () throws IOException {
-		// Read the header
-		MessageHeader header = new MessageHeader (din);
-		
-		// NOTE: as this is currently designed an improperly consumed message
-		// will break the handling of the next message,  The message data should
-		// be fully read into a buffer and that buffer passed into the message
-		// for handling...
-		
-        switch (header.getType ()) {
-        case DMOUSEMOVE:
-        	// Cut right to the chase with mouse movements since
-        	//  they are the most abundant
-            short ax = din.readShort ();
-    		short ay = din.readShort ();
-            client.mouseMove (ax, ay);	
-            break;
+     * Handle messages after the handshake is complete
+     */
+    byte[] messageDataBuffer = new byte[256];
 
-        case DMOUSERELMOVE:
-            short rx = din.readShort ();
-    		short ry = din.readShort ();
-            client.relMouseMove(rx, ry);	
-            break;
+    protected Result parseMessage() throws IOException {
+        // Read the header
+        MessageHeader header = new MessageHeader(din);
 
-        case DMOUSEWHEEL:
-			mouseWheel (new MouseWheelMessage (din));
-            break;
+        // NOTE: as this is currently designed an improperly consumed message
+        // will break the handling of the next message,  The message data should
+        // be fully read into a buffer and that buffer passed into the message
+        // for handling...
 
-		case DKEYDOWN:
-		    keyDown (new KeyDownMessage(din));
-            break;
+        switch (header.getType()) {
+            case DMOUSEMOVE:
+                // Cut right to the chase with mouse movements since
+                //  they are the most abundant
+                short ax = din.readShort();
+                short ay = din.readShort();
+                client.mouseMove(ax, ay);
+                break;
 
-		case DKEYUP:
-			keyUp (new KeyUpMessage(din));
-            break;
-		
-        case DKEYREPEAT:
-			keyRepeat (new KeyRepeatMessage (din));
-            break;
+            case DMOUSERELMOVE:
+                short rx = din.readShort();
+                short ry = din.readShort();
+                client.relMouseMove(rx, ry);
+                break;
 
-        case DMOUSEDOWN:
-            mouseDown (new MouseDownMessage (din));
-            break;
+            case DMOUSEWHEEL:
+                mouseWheel(new MouseWheelMessage(din));
+                break;
 
-        case DMOUSEUP:
-            mouseUp (new MouseUpMessage (din));
-            break;
+            case DKEYDOWN:
+                keyDown(new KeyDownMessage(din));
+                break;
 
-		case CKEEPALIVE:
-			// echo keep alives and reset alarm
-            new KeepAliveMessage ().write (dout);
-			resetKeepAliveAlarm ();
-			break;
+            case DKEYUP:
+                keyUp(new KeyUpMessage(din));
+                break;
 
-		case CNOOP:
-			// accept and discard no-op
-			break;
+            case DKEYREPEAT:
+                keyRepeat(new KeyRepeatMessage(din));
+                break;
 
-        case CENTER:
-			enter (new EnterMessage (header, din));
-			break;
+            case DMOUSEDOWN:
+                mouseDown(new MouseDownMessage(din));
+                break;
 
-        case CLEAVE:
-			leave (new LeaveMessage (din));
-			break;
+            case DMOUSEUP:
+                mouseUp(new MouseUpMessage(din));
+                break;
 
-		case CCLIPBOARD:
-			grabClipboard (new ClipboardMessage (din));
-			break;
+            case CKEEPALIVE:
+                // echo keep alives and reset alarm
+                new KeepAliveMessage().write(dout);
+                resetKeepAliveAlarm();
+                break;
 
-		case CSCREENSAVER:
-			byte screenSaverOnFlag = din.readByte();
-			screensaver (new ScreenSaverMessage (din, screenSaverOnFlag));
-			break;
+            case CNOOP:
+                // accept and discard no-op
+                break;
 
-		case QINFO:
-			queryInfo ();
-			break;
+            case CENTER:
+                enter(new EnterMessage(header, din));
+                break;
 
-		case CINFOACK:
-			//infoAcknowledgment (new InfoAckMessage (din));
-			infoAcknowledgment ();
-			
-			break;
+            case CLEAVE:
+                leave(new LeaveMessage(din));
+                break;
 
-        case DCLIPBOARD:
-			setClipboard (new ClipboardDataMessage (header, din));
-			break;
+            case CCLIPBOARD:
+                grabClipboard(new ClipboardMessage(din));
+                break;
 
-		case CRESETOPTIONS:
-			resetOptions (new ResetOptionsMessage (din));
-			break;
+            case CSCREENSAVER:
+                byte screenSaverOnFlag = din.readByte();
+                screensaver(new ScreenSaverMessage(din, screenSaverOnFlag));
+                break;
 
-        case DSETOPTIONS:
-			SetOptionsMessage setOptionsMessage = new SetOptionsMessage (header, din);
-			setOptions (setOptionsMessage);
-			break;
+            case QINFO:
+                queryInfo();
+                break;
 
-		case CCLOSE:
-			// server wants us to hangup
-			Log.debug1 ("recv close");
-			// client.disconnect (null);
-			return Result.DISCONNECT;
+            case CINFOACK:
+                //infoAcknowledgment (new InfoAckMessage (din));
+                infoAcknowledgment();
 
-        case EBAD:
-			Log.error ("server disconnected due to a protocol error");
-			// client.disconnect("server reported a protocol error");
-			return Result.DISCONNECT;
+                break;
 
-        default: 
-			return Result.UNKNOWN;
-		}
+            case DCLIPBOARD:
+                setClipboard(new ClipboardDataMessage(header, din));
+                break;
 
-		return Result.OKAY;
+            case CRESETOPTIONS:
+                resetOptions(new ResetOptionsMessage(din));
+                break;
 
-	}
+            case DSETOPTIONS:
+                SetOptionsMessage setOptionsMessage = new SetOptionsMessage(header, din);
+                setOptions(setOptionsMessage);
+                break;
 
-	private void handleData () {
-		Log.debug ("handle data called");
+            case CCLOSE:
+                // server wants us to hangup
+                Log.debug1("recv close");
+                // client.disconnect (null);
+                return Result.DISCONNECT;
 
-		try {
-			this.din = new DataInputStream (stream.getInputStream ());
-			// this.dout = new DataOutputStream (stream.getOutputStream ());
-			// this.oout = new ObjectOutputStream (stream.getOutputStream());
+            case EBAD:
+                Log.error("server disconnected due to a protocol error");
+                // client.disconnect("server reported a protocol error");
+                return Result.DISCONNECT;
 
-			while (true) {
-				switch (parser.parse ()) {
-				case OKAY:
-					break;
-				case UNKNOWN:
-					Log.error ("invalid message from server: "+din.readUTF());
-					return;
-				case DISCONNECT:
-					return;
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace ();
-			// TODO
-		}
-	}
+            default:
+                return Result.UNKNOWN;
+        }
 
-	private void resetKeepAliveAlarm () {
+        return Result.OKAY;
+
+    }
+
+    private void handleData() {
+        Log.debug("handle data called");
+
+        try {
+            this.din = new DataInputStream(stream.getInputStream());
+            // this.dout = new DataOutputStream (stream.getOutputStream ());
+            // this.oout = new ObjectOutputStream (stream.getOutputStream());
+
+            while (true) {
+                switch (parser.parse()) {
+                    case OKAY:
+                        break;
+                    case UNKNOWN:
+                        Log.error("invalid message from server: " + din.readUTF());
+                        return;
+                    case DISCONNECT:
+                        return;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            // TODO
+        }
+    }
+
+    private void resetKeepAliveAlarm() {
         if (keepAliveAlarmTimer != null) {
-            keepAliveAlarmTimer.cancel ();
+            keepAliveAlarmTimer.cancel();
             keepAliveAlarmTimer = null;
         }
-        
+
         if (keepAliveAlarm > 0.0) {
-            keepAliveAlarmTimer = new EventQueueTimer (keepAliveAlarm, true, this, 
-                    new EventJobInterface () {
-                        public void run (Event event) {
-                            handleKeepAliveAlarm ();
-                        }});
+            keepAliveAlarmTimer = new EventQueueTimer(keepAliveAlarm, true, this,
+                    new EventJobInterface() {
+                        public void run(Event event) {
+                            handleKeepAliveAlarm();
+                        }
+                    });
         }
-	}
+    }
 
-	private void setKeepAliveRate (double rate) {
+    private void setKeepAliveRate(double rate) {
         keepAliveAlarm = rate * KEEP_ALIVE_UNTIL_DEATH;
-        resetKeepAliveAlarm ();
-	}
-
-    private void handleKeepAliveAlarm () {
-        Log.note ("server is dead");
-        client.disconnect ("server is not responding");
+        resetKeepAliveAlarm();
     }
 
-	private void queryInfo () {
-		ClientInfo info = new ClientInfo (client.getShape (), client.getCursorPos ());
-		sendInfo (info);
-	}
-
-	private void sendInfo (ClientInfo info) {
-		try {
-			dout = new DataOutputStream (stream.getOutputStream ());
-            
-			new InfoMessage (info.getScreenPosition ().left,
-                            info.getScreenPosition ().top,
-                            info.getScreenPosition ().right,
-                            info.getScreenPosition ().bottom,
-                            info.getCursorPos ().x,
-                            info.getCursorPos ().y).write (dout);
-            
-		} catch (Exception e) {
-			// TODO
-			e.printStackTrace ();
-		}
-	}
-
-	private void infoAcknowledgment () {
-		Log.debug ("recv info acknowledgment");
-	}
-
-	public void onInfoChanged () {
-		// send info update
-		queryInfo ();
-	}
-
-	private void enter (EnterMessage enterMessage) {
-		Log.debug1 ("Screen entered: " + enterMessage);
-
-        seqNum = enterMessage.getSequenceNumber ();
-        client.enter (enterMessage);
-	}
-
-	private void leave (LeaveMessage leaveMessage) {
-		Log.debug1 ("Screen left: " + leaveMessage);
-		client.leave (leaveMessage);
-	}
-
-	private void keyUp (KeyUpMessage keyUpMessage) {
-        Log.debug1 (keyUpMessage.toString ());
-        
-        try {
-    		client.keyUp (keyUpMessage.getID(), keyUpMessage.getMask(), keyUpMessage.getButton());
-        } catch (Exception e) {
-        }
-	}
-
-    private void keyDown (KeyDownMessage keyDownMessage) {
-        Log.info (keyDownMessage.toString ());
-        
-        client.keyDown (keyDownMessage.getID(), keyDownMessage.getMask(), keyDownMessage.getButton());
-        
+    private void handleKeepAliveAlarm() {
+        Log.note("server is dead");
+        client.disconnect("server is not responding");
     }
 
-	private void keyRepeat (KeyRepeatMessage keyRepeatMessage) {
-        Log.debug1 (keyRepeatMessage.toString ());
-        
+    private void queryInfo() {
+        ClientInfo info = new ClientInfo(client.getShape(), client.getCursorPos());
+        sendInfo(info);
+    }
+
+    private void sendInfo(ClientInfo info) {
         try {
-            client.keyRepeat (keyRepeatMessage.getID (), keyRepeatMessage.getMask(), keyRepeatMessage.getButton());
+            dout = new DataOutputStream(stream.getOutputStream());
+
+            new InfoMessage(info.getScreenPosition().left,
+                    info.getScreenPosition().top,
+                    info.getScreenPosition().right,
+                    info.getScreenPosition().bottom,
+                    info.getCursorPos().x,
+                    info.getCursorPos().y).write(dout);
+
+        } catch (Exception e) {
+            // TODO
+            e.printStackTrace();
+        }
+    }
+
+    private void infoAcknowledgment() {
+        Log.debug("recv info acknowledgment");
+    }
+
+    public void onInfoChanged() {
+        // send info update
+        queryInfo();
+    }
+
+    private void enter(EnterMessage enterMessage) {
+        Log.debug1("Screen entered: " + enterMessage);
+
+        seqNum = enterMessage.getSequenceNumber();
+        client.enter(enterMessage);
+    }
+
+    private void leave(LeaveMessage leaveMessage) {
+        Log.debug1("Screen left: " + leaveMessage);
+        client.leave(leaveMessage);
+    }
+
+    private void keyUp(KeyUpMessage keyUpMessage) {
+        Log.debug1(keyUpMessage.toString());
+
+        try {
+            client.keyUp(keyUpMessage.getID(), keyUpMessage.getMask(), keyUpMessage.getButton());
         } catch (Exception e) {
         }
-	}
+    }
 
-	private void mouseDown (MouseDownMessage mouseDownMessage) {
-        Log.debug (mouseDownMessage.toString ());
-        client.mouseDown (mouseDownMessage.getButtonID ());
-	}
+    private void keyDown(KeyDownMessage keyDownMessage) {
+        Log.info(keyDownMessage.toString());
 
-	private void mouseUp (MouseUpMessage mouseUpMessage) {
-        Log.debug (mouseUpMessage.toString ());
-        client.mouseUp (mouseUpMessage.getButtonID ());
-	}
+        client.keyDown(keyDownMessage.getID(), keyDownMessage.getMask(), keyDownMessage.getButton());
 
-	private void mouseWheel (MouseWheelMessage mouseWheelMessage) {
-		client.mouseWheel(mouseWheelMessage.getXDelta(), mouseWheelMessage.getYDelta());
-	}
+    }
 
-	private void resetOptions (ResetOptionsMessage resetOptionsMessage) {
-	}
+    private void keyRepeat(KeyRepeatMessage keyRepeatMessage) {
+        Log.debug1(keyRepeatMessage.toString());
 
-	private void setOptions (SetOptionsMessage setOptionsMessage) {
-	}
+        try {
+            client.keyRepeat(keyRepeatMessage.getID(), keyRepeatMessage.getMask(), keyRepeatMessage.getButton());
+        } catch (Exception e) {
+        }
+    }
 
-	private void screensaver (ScreenSaverMessage screenSaverMessage) {
-	}
+    private void mouseDown(MouseDownMessage mouseDownMessage) {
+        Log.debug(mouseDownMessage.toString());
+        client.mouseDown(mouseDownMessage.getButtonID());
+    }
 
-	private void grabClipboard (ClipboardMessage clipboardMessage) {
-	}
+    private void mouseUp(MouseUpMessage mouseUpMessage) {
+        Log.debug(mouseUpMessage.toString());
+        client.mouseUp(mouseUpMessage.getButtonID());
+    }
 
-	private void setClipboard (ClipboardDataMessage clipboardDataMessage) {
-		Log.debug1 ("Setting clipboard: " + clipboardDataMessage);
-	}
+    private void mouseWheel(MouseWheelMessage mouseWheelMessage) {
+        client.mouseWheel(mouseWheelMessage.getXDelta(), mouseWheelMessage.getYDelta());
+    }
+
+    private void resetOptions(ResetOptionsMessage resetOptionsMessage) {
+    }
+
+    private void setOptions(SetOptionsMessage setOptionsMessage) {
+    }
+
+    private void screensaver(ScreenSaverMessage screenSaverMessage) {
+    }
+
+    private void grabClipboard(ClipboardMessage clipboardMessage) {
+    }
+
+    private void setClipboard(ClipboardDataMessage clipboardDataMessage) {
+        Log.debug1("Setting clipboard: " + clipboardDataMessage);
+    }
 
 }

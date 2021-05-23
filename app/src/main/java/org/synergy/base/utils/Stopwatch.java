@@ -29,7 +29,7 @@
 */
 
 
-package org.synergy.base;
+package org.synergy.base.utils;
 
 
 

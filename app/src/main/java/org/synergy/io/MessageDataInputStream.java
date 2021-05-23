@@ -53,7 +53,7 @@ public class MessageDataInputStream extends DataInputStream {
 		read (stringBytes, 0, stringBytes.length);
 		String readString = new String (stringBytes);
 		
-		if (readString.equals(expectedString) == false) {
+		if (!readString.equals(expectedString)) {
 			throw new IOException ("Expected string " + expectedString + " not found.  Found: " + readString);
 		}
 	}

@@ -4,11 +4,11 @@
  * Copyright (C) 2010 The Synergy Project
  * Copyright (C) 2009 The Synergy+ Project
  * Copyright (C) 2002 Chris Schoeneman
- * 
+ *
  * This package is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * found in the file COPYING that should have accompanied this file.
- * 
+ *
  * This package is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,9 +20,9 @@
 package org.synergy.base.exceptions;
 
 public class InvalidMessageException extends Exception {
-	private static final long serialVersionUID = 189730760889457948L;
+    private static final long serialVersionUID = 189730760889457948L;
 
-	public InvalidMessageException (String message) {
-        super (message);
+    public InvalidMessageException(String message) {
+        super(message);
     }
 }
