@@ -20,13 +20,19 @@
 package org.synergy;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.sdsmdg.tastytoast.TastyToast;
 
@@ -49,11 +55,38 @@ public class Synergy extends Activity {
 
     private Thread mainLoopThread = null;
 
+    public void addOverlay() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, 4711);
+            } else {
+                //startService(new Intent(this, MouseAccessibility.class));
+            }
+        }
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 4711) {
+            if (Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "Starting Mouse Service", Toast.LENGTH_SHORT).show();
+                //startService(new Intent(this, MouseAccessibility.class));
+
+            } else {
+                Toast.makeText(this, "ACTION_MANAGE_OVERLAY_PERMISSION Permission Denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
     private class MainLoopThread extends Thread {
 
         public void run() {
             try {
+                addOverlay();
                 Event event = new Event();
                 event = EventQueue.getInstance().getEvent(event, -1.0);
                 Log.note("Event grabbed");

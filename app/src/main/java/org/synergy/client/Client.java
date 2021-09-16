@@ -208,7 +208,7 @@ public class Client implements EventTarget {
             setupScreen();
             cleanupTimer();
 
-            // make sure we process any remaining messages later. we won't 
+            // make sure we process any remaining messages later. we won't
             //  receive another event for already pending messages so we fake
             //  one
             if (stream.isReady()) {
@@ -264,7 +264,7 @@ public class Client implements EventTarget {
 
     private void setupScreen() {
         assert (server == null);
-        assert (screen == null);
+        //assert (screen == null);
 
         server = new ServerProxy(this, stream);
 

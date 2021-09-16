@@ -21,6 +21,8 @@ package org.synergy.common.screens;
 
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
 
 import org.synergy.base.utils.Log;
 
@@ -29,7 +31,6 @@ import java.util.Arrays;
 public class BasicScreen implements ScreenInterface {
 
     private final int[] buttonToKeyDownID;
-
     // Keep track of the mouse cursor since I cannot find a way of
     //  determining the current mouse position
     private int mouseX = -1;
@@ -134,7 +135,7 @@ public class BasicScreen implements ScreenInterface {
 
     @Override
     public final void mouseMove(int x, int y) {
-        Log.debug2("mouseMove: " + x + ", " + y);
+        Log.debug("mouseMove: " + x + ", " + y);
 
         // this state appears to signal a screen exit, use this to
         // flag mouse position reinitialization for next call
