@@ -44,7 +44,7 @@ import org.synergy.net.SocketFactoryInterface;
 import org.synergy.net.SynergyConnectTask;
 import org.synergy.net.TCPSocketFactory;
 
-public class Synergy extends Activity {
+public class MainActivity extends Activity {
 
     private final static String PROP_clientName = "clientName";
     private final static String PROP_serverHost = "serverHost";
