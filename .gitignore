@@ -133,3 +133,9 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# DB Navigator plugin
+.idea/dbnavigator.xml
+
+# Git Toolbox plugin
+.idea/git_toolbox_prj.xml
