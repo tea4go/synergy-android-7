@@ -26,15 +26,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.annotation.RequiresApi;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
-import com.sdsmdg.tastytoast.TastyToast;
 
 import org.synergy.base.Event;
 import org.synergy.base.EventQueue;
@@ -66,18 +63,18 @@ public class Synergy extends Activity {
         }
     }
 
-
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 4711) {
-            if (Settings.canDrawOverlays(this)) {
-                Toast.makeText(this, "Starting Mouse Service", Toast.LENGTH_SHORT).show();
-                //startService(new Intent(this, MouseAccessibility.class));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Settings.canDrawOverlays(this)) {
+                    Toast.makeText(this, "Starting Mouse Service", Toast.LENGTH_SHORT).show();
+                    //startService(new Intent(this, MouseAccessibility.class));
 
-            } else {
-                Toast.makeText(this, "ACTION_MANAGE_OVERLAY_PERMISSION Permission Denied", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "ACTION_MANAGE_OVERLAY_PERMISSION Permission Denied", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -136,7 +133,7 @@ public class Synergy extends Activity {
         });
 
         Log.setLogLevel(Log.Level.DEBUG);
-        TastyToast.makeText(getApplicationContext(), "Client Starting", TastyToast.LENGTH_LONG, TastyToast.DEFAULT);
+        Toast.makeText(getApplicationContext(), "Client Starting", Toast.LENGTH_LONG).show();
         Log.debug("Client starting....");
     }
 
@@ -174,7 +171,7 @@ public class Synergy extends Activity {
 
             Client client = new Client(getApplicationContext(), clientName, serverAddress, socketFactory, null, basicScreen);
             new SynergyConnectTask().execute(client);
-            TastyToast.makeText(getApplicationContext(), "Device Connected", TastyToast.LENGTH_LONG, TastyToast.SUCCESS);
+            Toast.makeText(getApplicationContext(), "Device Connected", Toast.LENGTH_LONG).show();
 
             // TODO this looks quite hacky
             if (mainLoopThread == null) {
@@ -183,7 +180,7 @@ public class Synergy extends Activity {
             }
 
         } catch (Exception e) {
-            TastyToast.makeText(getApplicationContext(), "Connection Failed", TastyToast.LENGTH_LONG, TastyToast.ERROR);
+            Toast.makeText(getApplicationContext(), "Connection Failed", Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
     }
