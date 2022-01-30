@@ -35,18 +35,18 @@ import java.util.ArrayList;
  */
 public class Log {
     public enum Level {
-        PRINT,
         FATAL,
         ERROR,
         WARNING,
-        NOTE,
-        INFO,
         DEBUG,
         DEBUG1,
         DEBUG2,
         DEBUG3,
         DEBUG4,
-        DEBUG5;
+        DEBUG5,
+        NOTE,
+        INFO,
+        PRINT
     }
 
     // Current level of logging
@@ -121,7 +121,7 @@ public class Log {
 		} catch (Exception e) {
 			formattedMessage = formattedMessage + ":Class and line info not found";
 		}
-		output (level, tag, formattedMessage);
+		output (level, tag, level.name() + ":" + formattedMessage);
     }
 
     private void output (final Level level, final String tag, final String message) {
