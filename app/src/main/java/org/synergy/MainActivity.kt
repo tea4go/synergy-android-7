@@ -72,42 +72,6 @@ class MainActivity : Activity() {
         }
     }
 
-    fun addOverlay() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse(
-                        "package:$packageName"
-                    )
-                )
-                startActivityForResult(intent, 4711)
-            } else {
-                //startService(new Intent(this, MouseAccessibility.class));
-            }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 4711) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (Settings.canDrawOverlays(this)) {
-                    Toast.makeText(this, "Starting Mouse Service", Toast.LENGTH_SHORT).show()
-                    //startService(new Intent(this, MouseAccessibility.class));
-                } else {
-                    Toast.makeText(
-                        this,
-                        "ACTION_MANAGE_OVERLAY_PERMISSION Permission Denied",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    /**
-     * Called when the activity is first created.
-     */
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main)
@@ -132,9 +96,43 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Keep checking for revoked overlay drawing permission
+        requestOverlayDrawingPermission()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == OVERLAY_DRAWING_REQUEST_CODE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                Toast.makeText(
+                    this,
+                    "Draw over other apps permission denied",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         unbindService(serviceConnection)
+    }
+
+    private fun requestOverlayDrawingPermission() {
+        // TODO: Need to first show dialog to explain the request, and what the user has to do
+
+        // For pre-API 23, overlay drawing permission is granted by default
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse(
+                    "package:$packageName"
+                )
+            )
+            startActivityForResult(intent, OVERLAY_DRAWING_REQUEST_CODE)
+        }
     }
 
     private fun connect() {
@@ -211,5 +209,7 @@ class MainActivity : Activity() {
         private const val PROP_clientName = "clientName"
         private const val PROP_serverHost = "serverHost"
         private const val PROP_deviceName = "deviceName"
+
+        private const val OVERLAY_DRAWING_REQUEST_CODE = 4711
     }
 }
