@@ -4,4 +4,12 @@
     <string name="app_name">Barrier</string>
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
+    <string name="barrier_client_name">Barrier Client name</string>
+    <string name="default_client_name">android</string>
+    <string name="server_ip">Server IP/Hostname</string>
+    <string name="default_ip_address">192.168.43.228</string>
+    <string name="server_port">Server Port</string>
+    <string name="default_port">24800</string>
+    <string name="input_device_name">Input device name</string>
+    <string name="default_input_device_name">touchscreen</string>
 </resources>
