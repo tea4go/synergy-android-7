@@ -17,37 +17,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.common.screens;
+package org.synergy.common.screens
 
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.view.View;
-import android.view.accessibility.AccessibilityEvent;
+import android.graphics.Point
+import android.graphics.Rect
+import org.synergy.base.utils.Log
+import java.util.*
 
-import org.synergy.base.utils.Log;
+class BasicScreen : ScreenInterface {
+    private val buttonToKeyDownID: IntArray = IntArray(256)
 
-import java.util.Arrays;
-
-public class BasicScreen implements ScreenInterface {
-
-    private final int[] buttonToKeyDownID;
     // Keep track of the mouse cursor since I cannot find a way of
     //  determining the current mouse position
-    private int mouseX = -1;
-    private int mouseY = -1;
+    private var mouseX = -1
+    private var mouseY = -1
 
     // Screen dimensions
-    private int width;
-    private int height;
-
-    public BasicScreen() {
-
-        // the keyUp/Down/Repeat button parameter appears to be the low-level
-        // keyboard scan code (*shouldn't be* more than 256 of these, but I speak
-        // from anecdotal experience, not as an expert...
-        buttonToKeyDownID = new int[256];
-        Arrays.fill(buttonToKeyDownID, -1);
-    }
+    private var width = 0
+    private var height = 0
 
     /**
      * Set the shape of the screen -- set from the initializing activity
@@ -55,138 +42,121 @@ public class BasicScreen implements ScreenInterface {
      * @param width
      * @param height
      */
-    public void setShape(int width, int height) {
-        this.width = width;
-        this.height = height;
+    fun setShape(width: Int, height: Int) {
+        this.width = width
+        this.height = height
     }
 
-    @Override
-    public Rect getShape() {
-        return new Rect(0, 0, width, height);
+    override fun getShape(): Rect {
+        return Rect(0, 0, width, height)
     }
 
-    @Override
-    public void enable() {
+    override fun enable() {}
+    override fun disable() {}
+    override fun enter(toggleMask: Int) {
+        allKeysUp()
     }
 
-    @Override
-    public void disable() {
+    override fun leave(): Boolean {
+        allKeysUp()
+        return true
     }
 
-    @Override
-    public void enter(int toggleMask) {
-        allKeysUp();
-
-    }
-
-    @Override
-    public boolean leave() {
-        allKeysUp();
-        return true;
-    }
-
-    private void allKeysUp() {
+    private fun allKeysUp() {
         // TODO Auto-generated method stub
     }
 
-
-    @Override
-    public void keyDown(int id, int mask, int button) {
+    override fun keyDown(id: Int, mask: Int, button: Int) {
         // 1) 'button - 1' appears to be the low-level keyboard scan code
         // 2) 'id' does not appear to be conserved between server keyDown
         // and keyUp event broadcasts as the 'id' on *most* keyUp events
         // appears to be set to 0.  'button' does appear to be conserved
         // so we store the keyDown 'id' using this event so that we can
         // pull out the 'id' used for keyDown for proper keyUp handling
-        if (button < buttonToKeyDownID.length) {
-            buttonToKeyDownID[button] = id;
+        if (button < buttonToKeyDownID.size) {
+            buttonToKeyDownID[button] = id
         } else {
-            Log.note("found keyDown button parameter > " + buttonToKeyDownID.length + ", may not be able to properly handle keyUp event.");
+            Log.note("found keyDown button parameter > " + buttonToKeyDownID.size + ", may not be able to properly handle keyUp event.")
         }
         // TODO simulate keydown press
     }
 
-    @Override
-    public void keyUp(int id, int mask, int button) {
-        if (button < buttonToKeyDownID.length) {
-            int keyDownID = buttonToKeyDownID[button];
+    override fun keyUp(id: Int, mask: Int, button: Int) {
+        var id1 = id
+        if (button < buttonToKeyDownID.size) {
+            val keyDownID = buttonToKeyDownID[button]
             if (keyDownID > -1) {
-                id = keyDownID;
+                id1 = keyDownID
             }
         } else {
-            Log.note("found keyUp button parameter > " + buttonToKeyDownID.length + ", may not be able to properly handle keyUp event.");
+            Log.note("found keyUp button parameter > " + buttonToKeyDownID.size + ", may not be able to properly handle keyUp event.")
         }
         // TODO simulate keyup event
     }
 
-    @Override
-    public void keyRepeat(int keyEventID, int mask, int button) {
-    }
-
-    @Override
-    public void mouseDown(int buttonID) {
+    override fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {}
+    override fun mouseDown(buttonID: Int) {
         // todo simulate mouse button down? event
     }
 
-    @Override
-    public void mouseUp(int buttonID) {
+    override fun mouseUp(buttonID: Int) {
         // todo simulate mouse button up? event
     }
 
-    @Override
-    public final void mouseMove(int x, int y) {
-        Log.debug("mouseMove: " + x + ", " + y);
+    override fun mouseMove(x: Int, y: Int) {
+        Log.debug("mouseMove: $x, $y")
 
         // this state appears to signal a screen exit, use this to
         // flag mouse position reinitialization for next call
         // to this method.
         if (x == width && y == height) {
-            clearMousePosition(true);
-            return;
+            clearMousePosition(true)
+            return
         }
-
         if (mouseX < 0 || mouseY < 0) {
             // Injection.movemouse(-width, -height);
             // Injection.movemouse(x, y);
-            mouseX = x;
-            mouseY = y;
+            mouseX = x
+            mouseY = y
         } else {
-            int dx = x - mouseX;
-            int dy = y - mouseY;
+            val dx = x - mouseX
+            val dy = y - mouseY
             //Injection.movemouse(dx, dy);
             // Adjust 'known' cursor position
-            mouseX += dx;
-            mouseY += dy;
+            mouseX += dx
+            mouseY += dy
         }
     }
 
-    @Override
-    public void mouseRelativeMove(int x, int y) {
+    override fun mouseRelativeMove(x: Int, y: Int) {
         //Injection.movemouse(x, y);
     }
 
-    @Override
-    public void mouseWheel(int x, int y) {
+    override fun mouseWheel(x: Int, y: Int) {
         //Injection.mousewheel(x, y);
     }
 
-    private void clearMousePosition(boolean inject) {
-        mouseX = -1;
-        mouseY = -1;
+    private fun clearMousePosition(inject: Boolean) {
+        mouseX = -1
+        mouseY = -1
         if (inject) {
             // moving to height/width will hide mouse pointer
             //  Injection.movemouse(width, height);
         }
     }
 
-    @Override
-    public Point getCursorPos() {
-        return new Point(0, 0);
+    override fun getCursorPos(): Point {
+        return Point(0, 0)
     }
 
-    @Override
-    public Object getEventTarget() {
-        return this;
+    override fun getEventTarget(): Any {
+        return this
     }
 
+    init {
+        // the keyUp/Down/Repeat button parameter appears to be the low-level
+        // keyboard scan code (*shouldn't be* more than 256 of these, but I speak
+        // from anecdotal experience, not as an expert...
+        Arrays.fill(buttonToKeyDownID, -1)
+    }
 }
