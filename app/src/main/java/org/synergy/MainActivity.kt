@@ -20,28 +20,52 @@
 package org.synergy
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.provider.Settings
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import org.synergy.base.Event
-import org.synergy.base.EventQueue
-import org.synergy.base.EventType
+import androidx.core.app.NotificationChannelCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import org.synergy.base.utils.Log
-import org.synergy.client.Client
-import org.synergy.common.screens.BasicScreen
-import org.synergy.net.NetworkAddress
-import org.synergy.net.SocketFactoryInterface
-import org.synergy.net.SynergyConnectTask
-import org.synergy.net.TCPSocketFactory
+import org.synergy.services.BarrierClientService
+import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
+import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
+import org.synergy.utils.DisplayUtils
 
 class MainActivity : Activity() {
-    private var mainLoopThread: Thread? = null
+    private var barrierClientServiceBound: Boolean = false
+    private var barrierClientService: BarrierClientService? = null
+    private var barrierClientConnected: Boolean = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            if (service !is BarrierClientService.LocalBinder) {
+                return
+            }
+            service.service
+                .also { barrierClientService = it }
+                .apply {
+                    addOnConnectionChangeListener {
+                        barrierClientConnected = it
+                        updateConnectButton()
+                    }
+                }
+            barrierClientServiceBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            barrierClientService = null
+            barrierClientServiceBound = false
+        }
+    }
 
     fun addOverlay() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -76,99 +100,141 @@ class MainActivity : Activity() {
         }
     }
 
-    private inner class MainLoopThread : Thread() {
-        override fun run() {
-            try {
-                addOverlay()
-                var event = Event()
-                event = EventQueue.getInstance().getEvent(event, -1.0)
-                Log.note("Event grabbed")
-                while (event.type != EventType.QUIT && mainLoopThread === currentThread()) {
-                    EventQueue.getInstance().dispatchEvent(event)
-                    // TODO event.deleteData ();
-                    event = EventQueue.getInstance().getEvent(event, -1.0)
-                    Log.note("Event grabbed")
-                }
-                mainLoopThread = null
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                // TODO stop the accessibility injection service
-            }
-        }
-    }
-
     /**
      * Called when the activity is first created.
      */
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main)
+        createNotificationChannels()
         val preferences = getPreferences(MODE_PRIVATE)
         val clientName = preferences.getString(PROP_clientName, null)
         if (clientName != null) {
-            (findViewById<View>(R.id.clientNameEditText) as EditText).setText(clientName)
+            (findViewById<EditText>(R.id.clientNameEditText)).setText(clientName)
         }
         val serverHost = preferences.getString(PROP_serverHost, null)
         if (serverHost != null) {
-            (findViewById<View>(R.id.serverHostEditText) as EditText).setText(serverHost)
+            (findViewById<EditText>(R.id.serverHostEditText)).setText(serverHost)
         }
 
         // TODO make sure we have the appropriate permissions for the accessibility services. Otherwise display error/open settings intent
-        val connectButton = findViewById<View>(R.id.connectButton) as Button
-        // connect when clicked on the connectButton
+        val connectButton = findViewById<Button>(R.id.connectButton)
         connectButton.setOnClickListener { connect() }
-        Log.setLogLevel(Log.Level.DEBUG)
-        Toast.makeText(applicationContext, "Client Starting", Toast.LENGTH_LONG).show()
-        Log.debug("Client starting....")
+        if (BuildConfig.DEBUG) {
+            Log.setLogLevel(Log.Level.NOTE)
+        } else {
+            Log.setLogLevel(Log.Level.ERROR)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unbindService(serviceConnection)
     }
 
     private fun connect() {
-        val clientName = (findViewById<View>(R.id.clientNameEditText) as EditText).text.toString()
-        val ipAddress = (findViewById<View>(R.id.serverHostEditText) as EditText).text.toString()
-        val portStr = (findViewById<View>(R.id.serverPortEditText) as EditText).text.toString()
+        val clientName = (findViewById<EditText>(R.id.clientNameEditText)).text.toString()
+        val ipAddress = (findViewById<EditText>(R.id.serverHostEditText)).text.toString()
+        val portStr = (findViewById<EditText>(R.id.serverPortEditText)).text.toString()
         val port = portStr.toInt()
-        val deviceName = (findViewById<View>(R.id.inputDeviceEditText) as EditText).text.toString()
+        val deviceName = (findViewById<EditText>(R.id.inputDeviceEditText)).text.toString()
         val preferences = getPreferences(MODE_PRIVATE)
         val preferencesEditor = preferences.edit()
         preferencesEditor.putString(PROP_clientName, clientName)
         preferencesEditor.putString(PROP_serverHost, ipAddress)
         preferencesEditor.putString(PROP_deviceName, deviceName)
         preferencesEditor.apply()
-        try {
-            val socketFactory: SocketFactoryInterface = TCPSocketFactory()
-            val serverAddress = NetworkAddress(ipAddress, port)
 
-            // TODO start the accessibility service injection here
-            val basicScreen = BasicScreen()
-            val wm = windowManager
-            val display = wm.defaultDisplay
-            basicScreen.setShape(display.width, display.height)
-            Log.debug("Resolution: " + display.width + " x " + display.height)
+        val displayBounds = DisplayUtils.getDisplayBounds(this)
+        if (displayBounds == null) {
+            Log.error("displayBounds is null")
+            Toast.makeText(applicationContext, "displayBounds is null", Toast.LENGTH_LONG).show()
+            return
+        }
 
+        val intent = Intent(
+            this,
+            BarrierClientService::class.java,
+        ).apply {
+            putExtra("ip_address", ipAddress)
+            putExtra("port", port)
+            putExtra("client_name", clientName)
+            putExtra("screen_width", displayBounds.width())
+            putExtra("screen_height", displayBounds.height())
+        }
 
-            //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
-            Log.debug("Hostname: $clientName")
-            val client = Client(
-                applicationContext,
-                clientName,
-                serverAddress,
-                socketFactory,
-                null,
-                basicScreen
+        ContextCompat.startForegroundService(applicationContext, intent)
+        if (!barrierClientServiceBound) {
+            bindService(
+                Intent(this, BarrierClientService::class.java),
+                serviceConnection,
+                BIND_AUTO_CREATE
             )
-            SynergyConnectTask().execute(client)
-            Toast.makeText(applicationContext, "Device Connected", Toast.LENGTH_LONG).show()
+        }
 
-            // TODO this looks quite hacky
-            if (mainLoopThread == null) {
-                MainLoopThread().also {
-                    mainLoopThread = it
-                }.start()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(applicationContext, "Connection Failed", Toast.LENGTH_LONG).show()
-            e.printStackTrace()
+        // try {
+        //     val socketFactory: SocketFactoryInterface = TCPSocketFactory()
+        //     val serverAddress = NetworkAddress(ipAddress, port)
+        //
+        //     // TODO start the accessibility service injection here
+        //     val basicScreen = BasicScreen()
+        //     val wm = windowManager
+        //     val display = wm.defaultDisplay
+        //     basicScreen.setShape(display.width, display.height)
+        //     Log.debug("Resolution: " + display.width + " x " + display.height)
+        //
+        //
+        //     //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
+        //     Log.debug("Hostname: $clientName")
+        //     val client = Client(
+        //         applicationContext,
+        //         clientName,
+        //         serverAddress,
+        //         socketFactory,
+        //         null,
+        //         basicScreen
+        //     )
+        //     SynergyConnectTask().execute(client)
+        //     Toast.makeText(applicationContext, "Device Connected", Toast.LENGTH_LONG).show()
+        //
+        //     // TODO this looks quite hacky
+        //     if (mainLoopThread == null) {
+        //         MainLoopThread().also {
+        //             mainLoopThread = it
+        //         }.start()
+        //     }
+        // } catch (e: Exception) {
+        //     Toast.makeText(applicationContext, "Connection Failed", Toast.LENGTH_LONG).show()
+        //     e.printStackTrace()
+        // }
+    }
+
+    private fun disconnect() {
+        barrierClientService?.disconnect()
+    }
+
+    private fun createNotificationChannels() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val silentNotificationChannel = NotificationChannelCompat.Builder(
+            SILENT_NOTIFICATIONS_CHANNEL_ID,
+            NotificationManagerCompat.IMPORTANCE_LOW
+        ).apply {
+            setName(SILENT_NOTIFICATIONS_CHANNEL_NAME)
+            setSound(null, null)
+        }.build()
+        NotificationManagerCompat.from(applicationContext).run {
+            createNotificationChannel(silentNotificationChannel)
+        }
+    }
+
+    private fun updateConnectButton() {
+        val connectButton = findViewById<Button>(R.id.connectButton)
+        if (barrierClientConnected) {
+            connectButton.text = getString(R.string.disconnect)
+            connectButton.setOnClickListener { disconnect() }
+        } else {
+            connectButton.text = getString(R.string.connect)
+            connectButton.setOnClickListener { connect() }
         }
     }
 

@@ -12,6 +12,10 @@
     <application
         android:icon="@drawable/icon"
         android:label="@string/app_name">
+        <service
+            android:name=".services.BarrierClientService"
+            android:enabled="true"
+            android:exported="false"></service>
 
         <activity
             android:name=".MainActivity"

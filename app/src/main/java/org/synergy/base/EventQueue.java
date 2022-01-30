@@ -89,9 +89,9 @@ public class EventQueue implements EventQueueInterface {
      * @event Event to get
      * @timeout milliseconds to wait, < 0.0 is infinite
      */
-    public Event getEvent(final Event event, final double timeout)
+    public Event getEvent(final double timeout)
             throws InvalidMessageException {
-        EventData eventData = null;
+        EventData eventData;
 
         try {
             if (timeout < 0.0) {
@@ -110,7 +110,7 @@ public class EventQueue implements EventQueueInterface {
                 if (timeout < 0.0) {
                     // Client is not expecting a NONE type.
                     // Just try again
-                    return getEvent(event, timeout);
+                    return getEvent(timeout);
                 } else {
                     return null;
                 }

@@ -40,35 +40,37 @@ import org.synergy.net.DataSocketInterface;
 import org.synergy.net.NetworkAddress;
 import org.synergy.net.SocketFactoryInterface;
 
-import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
 
 public class Client implements EventTarget {
 
-    private final Context context;
-    private String name;
-    private NetworkAddress serverAddress;
+    private final String name;
+    private final NetworkAddress serverAddress;
     private Stream stream;
-    private SocketFactoryInterface socketFactory;
-    private StreamFilterFactoryInterface streamFilterFactory;
-    private ScreenInterface screen;
+    private final SocketFactoryInterface socketFactory;
+    private final StreamFilterFactoryInterface streamFilterFactory;
+    private final ScreenInterface screen;
+    private final OnConnectionChangeListener onConnectionChangeListener;
 
     private int mouseX;
     private int mouseY;
 
     private ServerProxy server;
 
-    public Client(final Context context, final String name, final NetworkAddress serverAddress,
-                  SocketFactoryInterface socketFactory, StreamFilterFactoryInterface streamFilterFactory,
-                  ScreenInterface screen) {
+    public Client(final String name,
+                  final NetworkAddress serverAddress,
+                  final SocketFactoryInterface socketFactory,
+                  final StreamFilterFactoryInterface streamFilterFactory,
+                  final ScreenInterface screen,
+                  final OnConnectionChangeListener onConnectionChangeListener) {
 
-        this.context = context;
         this.name = name;
         this.serverAddress = serverAddress;
         this.socketFactory = socketFactory;
         this.streamFilterFactory = streamFilterFactory;
         this.screen = screen;
+        this.onConnectionChangeListener = onConnectionChangeListener;
 
         assert (socketFactory != null);
         assert (screen != null);
@@ -80,48 +82,39 @@ public class Client implements EventTarget {
         // TODO
     }
 
-    public void connect() {
+    public void connect() throws IOException {
         if (stream != null) {
             Log.info("stream != null");
             return;
         }
 
-        try {
-            serverAddress.resolve();
+        serverAddress.resolve();
 
-            if (serverAddress.getAddress() != null) {
-                Log.debug("Connecting to: '" +
-                        serverAddress.getHostname() + "': " +
-                        serverAddress.getAddress() + ":" +
-                        serverAddress.getPort());
-            }
+        if (serverAddress.getAddress() != null) {
+            Log.debug("Connecting to: '" +
+                    serverAddress.getHostname() + "': " +
+                    serverAddress.getAddress() + ":" +
+                    serverAddress.getPort());
+        }
 
-            // create the socket
-            DataSocketInterface socket = socketFactory.create();
+        // create the socket
+        DataSocketInterface socket = socketFactory.create();
 
-            // filter socket messages, including a packetizing filter
-            stream = socket;
-            if (streamFilterFactory != null) {
-                // TODO stream = streamFilterFactory.create (stream, true);
-            }
+        // filter socket messages, including a packetizing filter
+        stream = socket;
+        if (streamFilterFactory != null) {
+            // TODO stream = streamFilterFactory.create (stream, true);
+        }
 
-            // connect
-            Log.debug("connecting to server");
+        // connect
+        Log.debug("connecting to server");
 
-            setupConnecting();
-            setupTimer();
+        setupConnecting();
+        setupTimer();
 
-            socket.connect(serverAddress);
-
-            //final Toast toast = Toast.makeText(context, "Connected to " + serverAddress.getHostname()
-            //        + ":" + serverAddress.getPort(), Toast.LENGTH_SHORT);
-            //toast.show();
-        } catch (IOException e) {
-            final String errorMessage = "Failed to connect to " + serverAddress.getHostname()
-                    + ":" + serverAddress.getPort();
-            Log.error(errorMessage);
-            //final Toast toast = Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT);
-            //toast.show();
+        socket.connect(serverAddress);
+        if (onConnectionChangeListener != null) {
+            onConnectionChangeListener.onConnectionChange(true);
         }
     }
 
@@ -133,6 +126,7 @@ public class Client implements EventTarget {
             sendConnectionFailedEvent(msg);
         } else {
             sendEvent(EventType.CLIENT_DISCONNECTED, null);
+            stream.close();
         }
     }
 
@@ -180,11 +174,14 @@ public class Client implements EventTarget {
     }
 
     private void handleConnectionFailed() {
-        // TODO
+        Log.debug("connection failed");
     }
 
     private void handleDisconnected() {
-        // TODO
+        Log.debug("disconnected");
+        if (onConnectionChangeListener != null) {
+            onConnectionChangeListener.onConnectionChange(false);
+        }
     }
 
     private void handleHello() {
@@ -317,7 +314,9 @@ public class Client implements EventTarget {
     }
 
     private void sendConnectionFailedEvent(String msg) {
-        // TODO
+        if (onConnectionChangeListener != null) {
+            onConnectionChangeListener.onConnectionChange(false);
+        }
     }
     
 
@@ -392,4 +391,7 @@ public class Client implements EventTarget {
         screen.keyUp(keyEventID, mask, button);
     }
 
+    public interface OnConnectionChangeListener {
+        void onConnectionChange(boolean connected);
+    }
 }

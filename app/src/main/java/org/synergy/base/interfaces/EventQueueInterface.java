@@ -27,7 +27,7 @@ public interface EventQueueInterface {
 
     public void adoptBuffer(EventQueueBuffer eventQueueBuffer);
 
-    public Event getEvent(final Event event, final double timeout) throws InvalidMessageException;
+    public Event getEvent(final double timeout) throws InvalidMessageException;
 
     public boolean dispatchEvent(final Event event);
 

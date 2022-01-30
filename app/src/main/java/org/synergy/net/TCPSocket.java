@@ -19,15 +19,17 @@
  */
 package org.synergy.net;
 
+import android.util.Log;
+
+import org.synergy.base.Event;
+import org.synergy.base.EventQueue;
+import org.synergy.base.EventType;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-
-import org.synergy.base.Event;
-import org.synergy.base.EventQueue;
-import org.synergy.base.EventType;
 
 public class TCPSocket implements DataSocketInterface {
 
@@ -73,6 +75,11 @@ public class TCPSocket implements DataSocketInterface {
     }
 
     public void close() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            Log.e("TCPSocket", "close: ", e);
+        }
     }
 
     public boolean isReady() {
