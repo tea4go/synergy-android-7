@@ -22,9 +22,14 @@ package org.synergy.common.screens
 import android.content.Context
 import android.graphics.Point
 import android.graphics.Rect
+import android.view.ViewConfiguration
 import org.synergy.base.utils.Log
 import org.synergy.services.BarrierAccessibilityAction.*
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
+import kotlin.math.absoluteValue
 
 
 class BasicScreen(private val context: Context) : ScreenInterface {
@@ -32,12 +37,26 @@ class BasicScreen(private val context: Context) : ScreenInterface {
 
     // Keep track of the mouse cursor since I cannot find a way of
     //  determining the current mouse position
-    private var mouseX = -1
-    private var mouseY = -1
+    private var cursorPosition = Point(-1, -1)
+    private var isMouseDown = false
+    private var mouseDownCursorPosition: Point? = null
+    private var isDragging = false
 
     // Screen dimensions
     private var width = 0
     private var height = 0
+
+    private val worker = Executors.newSingleThreadScheduledExecutor()
+    private var longClickFuture: ScheduledFuture<*>? = null
+
+    private val dragThreshold = ViewConfiguration.get(context).scaledTouchSlop
+
+    init {
+        // the keyUp/Down/Repeat button parameter appears to be the low-level
+        // keyboard scan code (*shouldn't be* more than 256 of these, but I speak
+        // from anecdotal experience, not as an expert...
+        Arrays.fill(buttonToKeyDownID, -1)
+    }
 
     /**
      * Set the shape of the screen -- set from the initializing activity
@@ -104,35 +123,75 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     override fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {}
 
     override fun mouseDown(buttonID: Int) {
-        // todo simulate mouse button down? event
+        isMouseDown = true
+        mouseDownCursorPosition = Point(cursorPosition)
+        scheduleLongClick()
+    }
+
+    private fun scheduleLongClick() {
+        longClickFuture?.cancel(true)
+        longClickFuture = worker.schedule(
+            {
+                context.sendBroadcast(
+                    MouseLongClick(
+                        cursorPosition.x,
+                        cursorPosition.y
+                    ).getIntent()
+                )
+            },
+            ViewConfiguration.getLongPressTimeout().toLong(),
+            TimeUnit.MILLISECONDS
+        )
     }
 
     override fun mouseUp(buttonID: Int) {
-        // todo simulate mouse button up? event
+        isMouseDown = false
+        if (longClickFuture?.isDone == true) {
+            // Long click event sent, skip the click event
+            return
+        }
+        if (isDragging) {
+            // was dragging, so skip the click event
+            isDragging = false
+            return
+        }
+        longClickFuture?.cancel(true)
+        context.sendBroadcast(MouseClick(cursorPosition.x, cursorPosition.y).getIntent())
     }
 
     override fun mouseMove(x: Int, y: Int) {
-        Log.debug("mouseMove: $x, $y")
+        // Log.debug("mouseMove: $x, $y")
 
         // this state appears to signal a screen exit, use this to
         // flag mouse position reinitialization for next call
         // to this method.
         if (x == width && y == height) {
-            clearMousePosition(true)
+            clearMousePosition()
             return
         }
-        if (mouseX < 0 || mouseY < 0) {
-            mouseX = x
-            mouseY = y
-        } else {
-            val dx = x - mouseX
-            val dy = y - mouseY
-            // Adjust 'known' cursor position
-            mouseX += dx
-            mouseY += dy
+
+        val prevPosition = Point(cursorPosition)
+        cursorPosition.set(x, y)
+
+        if (isMouseDown) {
+            mouseDownCursorPosition?.run {
+                val dx = cursorPosition.x - this.x
+                val dy = cursorPosition.y - this.y
+
+                if (dx.absoluteValue >= dragThreshold || dy.absoluteValue >= dragThreshold) {
+                    longClickFuture?.cancel(true)
+                    isDragging = true
+                    context.sendBroadcast(Drag(
+                        prevPosition.x,
+                        prevPosition.y,
+                        cursorPosition.x,
+                        cursorPosition.y,
+                    ).getIntent())
+                }
+            }
         }
 
-        context.sendBroadcast(MouseMove(mouseX, mouseY).getIntent())
+        context.sendBroadcast(MouseMove(cursorPosition.x, cursorPosition.y).getIntent())
     }
 
     override fun mouseRelativeMove(x: Int, y: Int) {
@@ -143,27 +202,19 @@ class BasicScreen(private val context: Context) : ScreenInterface {
         //Injection.mousewheel(x, y);
     }
 
-    private fun clearMousePosition(inject: Boolean) {
-        mouseX = -1
-        mouseY = -1
-        if (inject) {
-            // moving to height/width will hide mouse pointer
-            //  Injection.movemouse(width, height);
-        }
+    private fun clearMousePosition() {
+        longClickFuture?.cancel(true)
+        cursorPosition.set(-1, -1)
+        isMouseDown = false
+        mouseDownCursorPosition = null
+        isDragging = false
     }
 
     override fun getCursorPos(): Point {
-        return Point(0, 0)
+        return cursorPosition
     }
 
     override fun getEventTarget(): Any {
         return this
-    }
-
-    init {
-        // the keyUp/Down/Repeat button parameter appears to be the low-level
-        // keyboard scan code (*shouldn't be* more than 256 of these, but I speak
-        // from anecdotal experience, not as an expert...
-        Arrays.fill(buttonToKeyDownID, -1)
     }
 }

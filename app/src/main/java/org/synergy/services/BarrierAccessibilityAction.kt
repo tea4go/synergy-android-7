@@ -57,17 +57,64 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
         }
     }
 
+    data class MouseLongClick(val x: Int, val y: Int) : BarrierAccessibilityAction(
+        MOUSE_LONG_CLICK_ACTION,
+    ) {
+        override fun getIntent(): Intent = Intent().apply {
+            action = intentAction
+            putExtra("mouseX", x)
+            putExtra("mouseY", y)
+        }
+
+        companion object {
+            fun parseIntent(intent: Intent): MouseLongClick {
+                val x = intent.getIntExtra("mouseX", -1)
+                val y = intent.getIntExtra("mouseY", -1)
+                return MouseLongClick(x, y)
+            }
+        }
+    }
+
+    data class Drag(
+        val fromX: Int,
+        val fromY: Int,
+        val toX: Int,
+        val toY: Int,
+    ) : BarrierAccessibilityAction(DRAG_ACTION) {
+        override fun getIntent(): Intent = Intent().apply {
+            action = intentAction
+            putExtra("fromX", fromX)
+            putExtra("fromY", fromY)
+            putExtra("toX", toX)
+            putExtra("toY", toY)
+        }
+
+        companion object {
+            fun parseIntent(intent: Intent): Drag = intent.run {
+                val fromX = getIntExtra("fromX", -1)
+                val fromY = getIntExtra("fromY", -1)
+                val toX = getIntExtra("toX", -1)
+                val toY = getIntExtra("toY", -1)
+                return Drag(fromX, fromY, toX, toY)
+            }
+        }
+    }
+
     companion object {
         private const val MOUSE_ENTER_ACTION = "mouse_enter"
         private const val MOUSE_LEAVE_ACTION = "mouse_leave"
         private const val MOUSE_MOVE_ACTION = "mouse_move"
         private const val MOUSE_CLICK_ACTION = "mouse_click"
+        private const val MOUSE_LONG_CLICK_ACTION = "mouse_long_click"
+        private const val DRAG_ACTION = "drag"
 
         private val actionMap = mapOf(
             MOUSE_ENTER_ACTION to MouseEnter,
             MOUSE_LEAVE_ACTION to MouseLeave,
             MOUSE_MOVE_ACTION to MouseMove,
             MOUSE_CLICK_ACTION to MouseClick,
+            MOUSE_LONG_CLICK_ACTION to MouseLongClick,
+            DRAG_ACTION to Drag,
         )
 
         fun getAllActions() = actionMap.keys
@@ -77,6 +124,8 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
             MouseLeave -> MouseLeave.parseIntent()
             MouseMove -> MouseMove.parseIntent(intent)
             MouseClick -> MouseClick.parseIntent(intent)
+            MouseLongClick -> MouseLongClick.parseIntent(intent)
+            Drag -> Drag.parseIntent(intent)
             else -> null
         }
     }
