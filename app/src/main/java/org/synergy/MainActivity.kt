@@ -208,7 +208,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun updateConnectButton() {
+    private fun updateConnectButton() = runOnUiThread {
         val connectButton = findViewById<Button>(R.id.connectButton)
         if (barrierClientConnected) {
             connectButton.text = getString(R.string.disconnect)
