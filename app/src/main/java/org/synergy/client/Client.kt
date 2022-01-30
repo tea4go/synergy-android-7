@@ -17,260 +17,192 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.client;
+package org.synergy.client
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import android.graphics.Point
+import android.graphics.Rect
+import org.synergy.base.Event
+import org.synergy.base.EventQueue
+import org.synergy.base.EventType
+import org.synergy.base.interfaces.EventTarget
+import org.synergy.base.utils.Log
+import org.synergy.common.screens.ScreenInterface
+import org.synergy.io.Stream
+import org.synergy.io.StreamFilterFactoryInterface
+import org.synergy.io.msgs.EnterMessage
+import org.synergy.io.msgs.HelloBackMessage
+import org.synergy.io.msgs.HelloMessage
+import org.synergy.io.msgs.LeaveMessage
+import org.synergy.net.NetworkAddress
+import org.synergy.net.SocketFactoryInterface
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.IOException
 
-import org.synergy.base.Event;
-import org.synergy.base.interfaces.EventJobInterface;
-import org.synergy.base.EventQueue;
-import org.synergy.base.interfaces.EventTarget;
-import org.synergy.base.EventType;
-import org.synergy.base.utils.Log;
-import org.synergy.common.screens.ScreenInterface;
-import org.synergy.io.Stream;
-import org.synergy.io.StreamFilterFactoryInterface;
-import org.synergy.io.msgs.EnterMessage;
-import org.synergy.io.msgs.HelloBackMessage;
-import org.synergy.io.msgs.HelloMessage;
-import org.synergy.io.msgs.LeaveMessage;
-import org.synergy.net.DataSocketInterface;
-import org.synergy.net.NetworkAddress;
-import org.synergy.net.SocketFactoryInterface;
+class Client(
+    private val name: String,
+    private val serverAddress: NetworkAddress,
+    private val socketFactory: SocketFactoryInterface,
+    private val streamFilterFactory: StreamFilterFactoryInterface?,
+    private val screen: ScreenInterface,
+    private val connectionChangeListener: (Boolean) -> Unit,
+) : EventTarget {
+    private var stream: Stream? = null
+    private var mouseX = 0
+    private var mouseY = 0
+    private var server: ServerProxy? = null
 
-import android.graphics.Point;
-import android.graphics.Rect;
-
-public class Client implements EventTarget {
-
-    private final String name;
-    private final NetworkAddress serverAddress;
-    private Stream stream;
-    private final SocketFactoryInterface socketFactory;
-    private final StreamFilterFactoryInterface streamFilterFactory;
-    private final ScreenInterface screen;
-    private final OnConnectionChangeListener onConnectionChangeListener;
-
-    private int mouseX;
-    private int mouseY;
-
-    private ServerProxy server;
-
-    public Client(final String name,
-                  final NetworkAddress serverAddress,
-                  final SocketFactoryInterface socketFactory,
-                  final StreamFilterFactoryInterface streamFilterFactory,
-                  final ScreenInterface screen,
-                  final OnConnectionChangeListener onConnectionChangeListener) {
-
-        this.name = name;
-        this.serverAddress = serverAddress;
-        this.socketFactory = socketFactory;
-        this.streamFilterFactory = streamFilterFactory;
-        this.screen = screen;
-        this.onConnectionChangeListener = onConnectionChangeListener;
-
-        assert (socketFactory != null);
-        assert (screen != null);
-
-        // TODO register suspend / resume event handlers
-    }
-
-    public void finalize() throws Throwable {
+    @Throws(Throwable::class)
+    fun finalize() {
         // TODO
     }
 
-    public void connect() throws IOException {
+    @Throws(IOException::class)
+    fun connect() {
         if (stream != null) {
-            Log.info("stream != null");
-            return;
+            Log.info("stream != null")
+            return
         }
-
-        serverAddress.resolve();
-
-        if (serverAddress.getAddress() != null) {
-            Log.debug("Connecting to: '" +
-                    serverAddress.getHostname() + "': " +
-                    serverAddress.getAddress() + ":" +
-                    serverAddress.getPort());
+        serverAddress.resolve()
+        if (serverAddress.address != null) {
+            Log.debug(
+                "Connecting to: '" +
+                        serverAddress.hostname + "': " +
+                        serverAddress.address + ":" +
+                        serverAddress.port
+            )
         }
 
         // create the socket
-        DataSocketInterface socket = socketFactory.create();
+        val socket = socketFactory.create()
 
         // filter socket messages, including a packetizing filter
-        stream = socket;
+        stream = socket
         if (streamFilterFactory != null) {
             // TODO stream = streamFilterFactory.create (stream, true);
         }
 
         // connect
-        Log.debug("connecting to server");
-
-        setupConnecting();
-        setupTimer();
-
-        socket.connect(serverAddress);
-        if (onConnectionChangeListener != null) {
-            onConnectionChangeListener.onConnectionChange(true);
-        }
+        Log.debug("connecting to server")
+        setupConnecting()
+        setupTimer()
+        socket.connect(serverAddress)
+        connectionChangeListener(true)
     }
 
-    public void disconnect(String msg) {
-        cleanupTimer();
-        cleanupScreen();
-        cleanupConnecting();
+    fun disconnect(msg: String?) {
+        cleanupTimer()
+        cleanupScreen()
+        cleanupConnecting()
         if (msg != null) {
-            sendConnectionFailedEvent(msg);
+            sendConnectionFailedEvent(msg)
         } else {
-            sendEvent(EventType.CLIENT_DISCONNECTED, null);
-            stream.close();
+            sendEvent(EventType.CLIENT_DISCONNECTED, null)
+            stream!!.close()
         }
     }
 
-    private void setupConnecting() {
-        assert (stream != null);
-
-        EventQueue.getInstance().adoptHandler(EventType.SOCKET_CONNECTED, stream.getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleConnected();
-                    }
-                });
-
-        EventJobInterface job = EventQueue.getInstance().getHandler(EventType.SOCKET_CONNECTED, stream.getEventTarget());
-
-        EventQueue.getInstance().adoptHandler(EventType.SOCKET_CONNECT_FAILED, stream.getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleConnectionFailed();
-                    }
-                });
+    private fun setupConnecting() {
+        assert(stream != null)
+        EventQueue.getInstance().adoptHandler(
+            EventType.SOCKET_CONNECTED, stream!!.eventTarget
+        ) { handleConnected() }
+        val job =
+            EventQueue.getInstance().getHandler(EventType.SOCKET_CONNECTED, stream!!.eventTarget)
+        EventQueue.getInstance().adoptHandler(
+            EventType.SOCKET_CONNECT_FAILED, stream!!.eventTarget
+        ) { handleConnectionFailed() }
     }
 
-    private void cleanupConnecting() {
+    private fun cleanupConnecting() {
         if (stream != null) {
-            EventQueue.getInstance().removeHandler(EventType.SOCKET_CONNECTED, stream.getEventTarget());
-            EventQueue.getInstance().removeHandler(EventType.SOCKET_CONNECT_FAILED, stream.getEventTarget());
+            EventQueue.getInstance().removeHandler(EventType.SOCKET_CONNECTED, stream!!.eventTarget)
+            EventQueue.getInstance()
+                .removeHandler(EventType.SOCKET_CONNECT_FAILED, stream!!.eventTarget)
         }
     }
 
-    private void setupTimer() {
+    private fun setupTimer() {
         // TODO
         //assert (timer == null);
-
-
     }
 
-    private void handleConnected() {
-        Log.debug1("connected; wait for hello");
-
-        cleanupConnecting();
-        setupConnection();
+    private fun handleConnected() {
+        Log.debug1("connected; wait for hello")
+        cleanupConnecting()
+        setupConnection()
 
         // TODO Clipboard
     }
 
-    private void handleConnectionFailed() {
-        Log.debug("connection failed");
+    private fun handleConnectionFailed() {
+        Log.debug("connection failed")
     }
 
-    private void handleDisconnected() {
-        Log.debug("disconnected");
-        if (onConnectionChangeListener != null) {
-            onConnectionChangeListener.onConnectionChange(false);
-        }
+    private fun handleDisconnected() {
+        Log.debug("disconnected")
+        connectionChangeListener(false)
     }
 
-    private void handleHello() {
-        Log.debug("handling hello");
-
+    private fun handleHello() {
+        Log.debug("handling hello")
         try {
             // Read in the Hello Message
-            DataInputStream din = new DataInputStream(stream.getInputStream());
-            HelloMessage helloMessage = new HelloMessage(din);
-
-            Log.debug1("Read hello message: " + helloMessage);
+            val din = DataInputStream(stream!!.inputStream)
+            val helloMessage = HelloMessage(din)
+            Log.debug1("Read hello message: $helloMessage")
 
             // TODO check versions
 
             // say hello back
-            DataOutputStream dout = new DataOutputStream(stream.getOutputStream());
+            val dout = DataOutputStream(stream!!.outputStream)
 
             // Grab the hostname
-            new HelloBackMessage(1, 3, name).write(dout);
-
-            setupScreen();
-            cleanupTimer();
+            HelloBackMessage(1, 3, name).write(dout)
+            setupScreen()
+            cleanupTimer()
 
             // make sure we process any remaining messages later. we won't
             //  receive another event for already pending messages so we fake
             //  one
-            if (stream.isReady()) {
+            if (stream!!.isReady) {
                 // TODO, So far this event does nothing -- I think
-                EventQueue.getInstance().addEvent(new Event(EventType.STREAM_INPUT_READY, stream.getEventTarget()));
+                EventQueue.getInstance()
+                    .addEvent(Event(EventType.STREAM_INPUT_READY, stream!!.eventTarget))
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
-    private void handleOutputError() {
+    private fun handleOutputError() {}
+
+    private fun setupConnection() {
+        assert(stream != null)
+        EventQueue.getInstance().adoptHandler(
+            EventType.SOCKET_DISCONNECTED, stream!!.eventTarget
+        ) { handleDisconnected() }
+        EventQueue.getInstance().adoptHandler(
+            EventType.STREAM_INPUT_READY, stream!!.eventTarget
+        ) { handleHello() }
+        EventQueue.getInstance().adoptHandler(
+            EventType.STREAM_OUTPUT_ERROR, stream!!.eventTarget
+        ) { handleDisconnected() }
+        EventQueue.getInstance().adoptHandler(
+            EventType.STREAM_INPUT_SHUTDOWN, stream!!.eventTarget
+        ) { handleDisconnected() }
+        EventQueue.getInstance().adoptHandler(
+            EventType.STREAM_OUTPUT_SHUTDOWN, stream!!.eventTarget
+        ) { handleDisconnected() }
     }
 
-
-    private void setupConnection() {
-        assert (stream != null);
-
-        EventQueue.getInstance().adoptHandler(EventType.SOCKET_DISCONNECTED, stream.getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleDisconnected();
-                    }
-                });
-
-        EventQueue.getInstance().adoptHandler(EventType.STREAM_INPUT_READY, stream.getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleHello();
-                    }
-                });
-
-        EventQueue.getInstance().adoptHandler(EventType.STREAM_OUTPUT_ERROR, stream.getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleDisconnected();
-                    }
-                });
-        EventQueue.getInstance().adoptHandler(EventType.STREAM_INPUT_SHUTDOWN, stream.getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleDisconnected();
-                    }
-                });
-        EventQueue.getInstance().adoptHandler(EventType.STREAM_OUTPUT_SHUTDOWN, stream.getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleDisconnected();
-                    }
-                });
-    }
-
-    private void setupScreen() {
-        assert (server == null);
+    private fun setupScreen() {
+        assert(server == null)
         //assert (screen == null);
-
-        server = new ServerProxy(this, stream);
-
-        EventQueue.getInstance().adoptHandler(EventType.SHAPE_CHANGED, getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleShapeChanged();
-                    }
-                });
+        server = ServerProxy(this, stream)
+        EventQueue.getInstance().adoptHandler(
+            EventType.SHAPE_CHANGED, eventTarget
+        ) { handleShapeChanged() }
         // TODO Clipboard
 //        EventQueue.getInstance().adoptHandler(Stream.getInputShutdownEvent(), stream.getEventTarget(),
 //        		new EventJobInterface () { public void run (Event event) {
@@ -278,47 +210,41 @@ public class Client implements EventTarget {
 //        			}});
     }
 
-    private void cleanupTimer() {
+    private fun cleanupTimer() {
         // TODO
     }
 
-    private void cleanupScreen() {
+    private fun cleanupScreen() {
         // TODO/
     }
 
-    public Object getEventTarget() {
-        return screen.getEventTarget();
+    override fun getEventTarget(): Any {
+        return screen.eventTarget
     }
 
-    private void handleShapeChanged() {
-        Log.debug("resolution changed");
-        server.onInfoChanged();
+    private fun handleShapeChanged() {
+        Log.debug("resolution changed")
+        server!!.onInfoChanged()
     }
 
-    public Rect getShape() {
-        return screen.getShape();
+    val shape: Rect
+        get() = screen.shape
+
+    val cursorPos: Point
+        get() = screen.cursorPos
+
+    fun handshakeComplete() {
+        screen.enable()
+        sendEvent(EventType.CLIENT_CONNECTED, "")
     }
 
-    public Point getCursorPos() {
-        return screen.getCursorPos();
+    private fun sendEvent(type: EventType, data: Any?) {
+        EventQueue.getInstance().addEvent(Event(type, data))
     }
 
-
-    public void handshakeComplete() {
-        screen.enable();
-        sendEvent(EventType.CLIENT_CONNECTED, "");
+    private fun sendConnectionFailedEvent(msg: String) {
+        connectionChangeListener(false)
     }
-
-    private void sendEvent(EventType type, Object data) {
-        EventQueue.getInstance().addEvent(new Event(type, data));
-    }
-
-    private void sendConnectionFailedEvent(String msg) {
-        if (onConnectionChangeListener != null) {
-            onConnectionChangeListener.onConnectionChange(false);
-        }
-    }
-    
 
     /*
     private Integer getConnectedEvent () {
@@ -337,62 +263,57 @@ public class Client implements EventTarget {
     }
     */
 
-
-    public void enter(EnterMessage enterMessage) {
-        mouseX = enterMessage.getX();
-        mouseY = enterMessage.getY();
-        screen.mouseMove(mouseX, mouseY);
-        screen.enter((int) enterMessage.getMask());
+    fun enter(enterMessage: EnterMessage) {
+        mouseX = enterMessage.x.toInt()
+        mouseY = enterMessage.y.toInt()
+        screen.mouseMove(mouseX, mouseY)
+        screen.enter(enterMessage.mask.toInt())
     }
 
-    public void leave(LeaveMessage leaveMessage) {
+    fun leave(leaveMessage: LeaveMessage?) {
         // Since I don't know how to hide the cursor, tuck it away out of sight
         // screen.mouseMove(screen.getShape().right, screen.getShape().bottom);
-        screen.leave();
+        screen.leave()
     }
 
-    public void mouseMove(int x, int y) {
-        screen.mouseMove(x, y);
+    fun mouseMove(x: Int, y: Int) {
+        screen.mouseMove(x, y)
     }
 
-    public void mouseDown(int buttonID) {
-        screen.mouseDown(buttonID);
+    fun mouseDown(buttonID: Int) {
+        screen.mouseDown(buttonID)
     }
 
-    public void mouseUp(int buttonID) {
-        screen.mouseUp(buttonID);
+    fun mouseUp(buttonID: Int) {
+        screen.mouseUp(buttonID)
     }
 
-    public void relMouseMove(int x, int y) {
-        screen.mouseRelativeMove(x, y);
+    fun relMouseMove(x: Int, y: Int) {
+        screen.mouseRelativeMove(x, y)
     }
 
-    public void mouseWheel(int x, int y) {
-        screen.mouseWheel(x, y);
-    }
-
-    /**
-     * @param keyEventID A VK_ defined in KeyEvent
-     */
-    public void keyDown(int keyEventID, int mask, int button) {
-        screen.keyDown(keyEventID, mask, button);
+    fun mouseWheel(x: Int, y: Int) {
+        screen.mouseWheel(x, y)
     }
 
     /**
      * @param keyEventID A VK_ defined in KeyEvent
      */
-    public void keyRepeat(int keyEventID, int mask, int button) {
-        screen.keyDown(keyEventID, mask, button);
+    fun keyDown(keyEventID: Int, mask: Int, button: Int) {
+        screen.keyDown(keyEventID, mask, button)
     }
 
     /**
      * @param keyEventID A VK_ defined in KeyEvent
      */
-    public void keyUp(int keyEventID, int mask, int button) {
-        screen.keyUp(keyEventID, mask, button);
+    fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {
+        screen.keyDown(keyEventID, mask, button)
     }
 
-    public interface OnConnectionChangeListener {
-        void onConnectionChange(boolean connected);
+    /**
+     * @param keyEventID A VK_ defined in KeyEvent
+     */
+    fun keyUp(keyEventID: Int, mask: Int, button: Int) {
+        screen.keyUp(keyEventID, mask, button)
     }
 }
