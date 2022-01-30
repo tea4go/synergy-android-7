@@ -115,14 +115,15 @@ class BarrierClientService : Service() {
             socketFactory,
             null,
             basicScreen
-        ) {
-            onConnectionChangeListeners.forEach { listener ->
-                listener(it)
-                if (!it) {
-                    stopForeground(true)
-                    stopSelf()
-                }
+        ) { connected ->
+            onConnectionChangeListeners.forEach { it(connected) }
+            if (connected) {
+                startService(Intent(this, BarrierAccessibilityService::class.java))
+                return@Client
             }
+            stopService(Intent(this, BarrierAccessibilityService::class.java))
+            stopForeground(true)
+            stopSelf()
         }
 
         coroutineScope.launch {
