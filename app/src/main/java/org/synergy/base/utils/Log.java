@@ -117,10 +117,8 @@ public class Log {
 			String caller = stackTraceElements[3].getClassName ();
 			int lineNum = stackTraceElements[3].getLineNumber ();
 
-			formattedMessage = formattedMessage + ":" + caller + ":" + lineNum;
-		} catch (Exception e) {
-			formattedMessage = formattedMessage + ":Class and line info not found";
-		}
+			formattedMessage = caller + ":" + lineNum  + " : " + formattedMessage;
+		} catch (Exception ignored) {}
 		output (level, tag, level.name() + ":" + formattedMessage);
     }
 
