@@ -35,12 +35,14 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import org.synergy.base.utils.Log
+import org.synergy.services.BarrierAccessibilityService
 import org.synergy.services.BarrierClientService
 import org.synergy.services.BarrierClientService.Companion.EXTRA_CLIENT_NAME
 import org.synergy.services.BarrierClientService.Companion.EXTRA_IP_ADDRESS
 import org.synergy.services.BarrierClientService.Companion.EXTRA_PORT
 import org.synergy.services.BarrierClientService.Companion.EXTRA_SCREEN_HEIGHT
 import org.synergy.services.BarrierClientService.Companion.EXTRA_SCREEN_WIDTH
+import org.synergy.utils.AccessibilityUtils
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
 import org.synergy.utils.DisplayUtils
@@ -98,8 +100,9 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        // Keep checking for revoked overlay drawing permission
+        // Keep checking for revoked permissions
         requestOverlayDrawingPermission()
+        requestAccessibilityPermission()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
@@ -132,6 +135,17 @@ class MainActivity : Activity() {
                 )
             )
             startActivityForResult(intent, OVERLAY_DRAWING_REQUEST_CODE)
+        }
+    }
+
+    private fun requestAccessibilityPermission() {
+        val enabled = AccessibilityUtils.isAccessibilityServiceEnabled(
+            this,
+            BarrierAccessibilityService::class.java
+        )
+        Log.debug("accessibility enabled: $enabled")
+        if (!enabled) {
+            // show dialog
         }
     }
 
