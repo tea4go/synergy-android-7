@@ -12,4 +12,5 @@
     <string name="default_port">24800</string>
     <string name="input_device_name">Input device name</string>
     <string name="default_input_device_name">touchscreen</string>
+    <string name="cursor">Cursor</string>
 </resources>
