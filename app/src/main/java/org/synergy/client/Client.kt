@@ -52,6 +52,12 @@ class Client(
     private var mouseY = 0
     private var server: ServerProxy? = null
 
+    val shape: Rect
+        get() = screen.shape
+
+    val cursorPos: Point
+        get() = screen.cursorPos
+
     @Throws(Throwable::class)
     fun finalize() {
         // TODO
@@ -60,18 +66,10 @@ class Client(
     @Throws(IOException::class)
     fun connect() {
         if (stream != null) {
-            Log.info("stream != null")
             return
         }
         serverAddress.resolve()
-        if (serverAddress.address != null) {
-            Log.debug(
-                "Connecting to: '" +
-                        serverAddress.hostname + "': " +
-                        serverAddress.address + ":" +
-                        serverAddress.port
-            )
-        }
+        Log.debug("Connecting to: '${serverAddress.hostname}': ${serverAddress.address}:${serverAddress.port}")
 
         // create the socket
         val socket = socketFactory.create()
@@ -98,33 +96,35 @@ class Client(
             sendConnectionFailedEvent(msg)
         } else {
             sendEvent(EventType.CLIENT_DISCONNECTED, null)
-            stream!!.close()
+            stream?.close()
         }
     }
 
-    private fun setupConnecting() {
-        assert(stream != null)
+    private fun setupConnecting() = stream?.run {
         EventQueue.getInstance().adoptHandler(
-            EventType.SOCKET_CONNECTED, stream!!.eventTarget
+            EventType.SOCKET_CONNECTED,
+            eventTarget,
         ) { handleConnected() }
-        val job =
-            EventQueue.getInstance().getHandler(EventType.SOCKET_CONNECTED, stream!!.eventTarget)
+        // val job = EventQueue.getInstance().getHandler(EventType.SOCKET_CONNECTED, it.eventTarget)
         EventQueue.getInstance().adoptHandler(
-            EventType.SOCKET_CONNECT_FAILED, stream!!.eventTarget
+            EventType.SOCKET_CONNECT_FAILED,
+            eventTarget,
         ) { handleConnectionFailed() }
     }
 
-    private fun cleanupConnecting() {
-        if (stream != null) {
-            EventQueue.getInstance().removeHandler(EventType.SOCKET_CONNECTED, stream!!.eventTarget)
-            EventQueue.getInstance()
-                .removeHandler(EventType.SOCKET_CONNECT_FAILED, stream!!.eventTarget)
-        }
+    private fun cleanupConnecting() = stream?.run {
+        EventQueue.getInstance().removeHandler(
+            EventType.SOCKET_CONNECTED,
+            eventTarget,
+        )
+        EventQueue.getInstance().removeHandler(
+            EventType.SOCKET_CONNECT_FAILED,
+            eventTarget,
+        )
     }
 
     private fun setupTimer() {
         // TODO
-        //assert (timer == null);
     }
 
     private fun handleConnected() {
@@ -144,70 +144,78 @@ class Client(
         connectionChangeListener(false)
     }
 
-    private fun handleHello() {
+    private fun handleHello() = stream?.run {
         Log.debug("handling hello")
         try {
             // Read in the Hello Message
-            val din = DataInputStream(stream!!.inputStream)
+            val din = DataInputStream(inputStream)
             val helloMessage = HelloMessage(din)
             Log.debug1("Read hello message: $helloMessage")
 
             // TODO check versions
 
             // say hello back
-            val dout = DataOutputStream(stream!!.outputStream)
+            val out = DataOutputStream(outputStream)
 
             // Grab the hostname
-            HelloBackMessage(1, 3, name).write(dout)
+            HelloBackMessage(1, 3, name).write(out)
             setupScreen()
             cleanupTimer()
 
             // make sure we process any remaining messages later. we won't
             //  receive another event for already pending messages so we fake
             //  one
-            if (stream!!.isReady) {
+            if (isReady) {
                 // TODO, So far this event does nothing -- I think
-                EventQueue.getInstance()
-                    .addEvent(Event(EventType.STREAM_INPUT_READY, stream!!.eventTarget))
+                EventQueue.getInstance().addEvent(
+                    Event(
+                        EventType.STREAM_INPUT_READY,
+                        eventTarget
+                    )
+                )
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.error(e.localizedMessage)
         }
     }
 
     private fun handleOutputError() {}
 
-    private fun setupConnection() {
-        assert(stream != null)
+    private fun setupConnection() = stream?.run {
         EventQueue.getInstance().adoptHandler(
-            EventType.SOCKET_DISCONNECTED, stream!!.eventTarget
+            EventType.SOCKET_DISCONNECTED,
+            eventTarget
         ) { handleDisconnected() }
         EventQueue.getInstance().adoptHandler(
-            EventType.STREAM_INPUT_READY, stream!!.eventTarget
+            EventType.STREAM_INPUT_READY,
+            eventTarget
         ) { handleHello() }
         EventQueue.getInstance().adoptHandler(
-            EventType.STREAM_OUTPUT_ERROR, stream!!.eventTarget
+            EventType.STREAM_OUTPUT_ERROR,
+            eventTarget
         ) { handleDisconnected() }
         EventQueue.getInstance().adoptHandler(
-            EventType.STREAM_INPUT_SHUTDOWN, stream!!.eventTarget
+            EventType.STREAM_INPUT_SHUTDOWN,
+            eventTarget
         ) { handleDisconnected() }
         EventQueue.getInstance().adoptHandler(
-            EventType.STREAM_OUTPUT_SHUTDOWN, stream!!.eventTarget
+            EventType.STREAM_OUTPUT_SHUTDOWN,
+            eventTarget
         ) { handleDisconnected() }
     }
 
-    private fun setupScreen() {
-        assert(server == null)
-        //assert (screen == null);
-        server = ServerProxy(this, stream)
+    private fun setupScreen() = stream?.run {
+        server = ServerProxy(this@Client, stream)
         EventQueue.getInstance().adoptHandler(
-            EventType.SHAPE_CHANGED, eventTarget
+            EventType.SHAPE_CHANGED,
+            this@Client.eventTarget
         ) { handleShapeChanged() }
+
         // TODO Clipboard
-//        EventQueue.getInstance().adoptHandler(Stream.getInputShutdownEvent(), stream.getEventTarget(),
-//        		new EventJobInterface () { public void run (Event event) {
-//        				handleDisconnected ();
-//        			}});
+        // EventQueue.getInstance().adoptHandler(Stream.getInputShutdownEvent(), stream.getEventTarget(),
+        // new EventJobInterface () { public void run (Event event) {
+        // handleDisconnected ();
+        // }});
     }
 
     private fun cleanupTimer() {
@@ -215,7 +223,7 @@ class Client(
     }
 
     private fun cleanupScreen() {
-        // TODO/
+        // TODO
     }
 
     override fun getEventTarget(): Any {
@@ -224,14 +232,8 @@ class Client(
 
     private fun handleShapeChanged() {
         Log.debug("resolution changed")
-        server!!.onInfoChanged()
+        server?.onInfoChanged()
     }
-
-    val shape: Rect
-        get() = screen.shape
-
-    val cursorPos: Point
-        get() = screen.cursorPos
 
     fun handshakeComplete() {
         screen.enable()
@@ -245,23 +247,6 @@ class Client(
     private fun sendConnectionFailedEvent(msg: String) {
         connectionChangeListener(false)
     }
-
-    /*
-    private Integer getConnectedEvent () {
-        connectedEvent = Event.registerTypeOnce (connectedEvent, "Client.connected");
-        return connectedEvent;
-    }
-
-    private Integer getConnectionFailedEvent () {
-        connectionFailedEvent = Event.registerTypeOnce (connectionFailedEvent, "Client.failed");
-        return connectionFailedEvent;
-    }
-
-    private Integer getDisconnectedEvent () {
-        disconnectedEvent = Event.registerTypeOnce (disconnectedEvent, "Client.disconnected");
-        return disconnectedEvent;
-    }
-    */
 
     fun enter(enterMessage: EnterMessage) {
         mouseX = enterMessage.x.toInt()
