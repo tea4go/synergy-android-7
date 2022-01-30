@@ -105,7 +105,7 @@ class BarrierClientService : Service() {
         val socketFactory: SocketFactoryInterface = TCPSocketFactory()
         val serverAddress = NetworkAddress(ipAddress, port)
 
-        val basicScreen = BasicScreen()
+        val basicScreen = BasicScreen(this)
         basicScreen.setShape(screenWidth, screenHeight)
         Log.debug("Resolution: $screenWidth x $screenHeight")
 

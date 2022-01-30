@@ -19,12 +19,15 @@
  */
 package org.synergy.common.screens
 
+import android.content.Context
 import android.graphics.Point
 import android.graphics.Rect
 import org.synergy.base.utils.Log
+import org.synergy.services.BarrierAccessibilityAction.*
 import java.util.*
 
-class BasicScreen : ScreenInterface {
+
+class BasicScreen(private val context: Context) : ScreenInterface {
     private val buttonToKeyDownID: IntArray = IntArray(256)
 
     // Keep track of the mouse cursor since I cannot find a way of
@@ -52,13 +55,17 @@ class BasicScreen : ScreenInterface {
     }
 
     override fun enable() {}
+
     override fun disable() {}
+
     override fun enter(toggleMask: Int) {
         allKeysUp()
+        context.sendBroadcast(MouseEnter().getIntent())
     }
 
     override fun leave(): Boolean {
         allKeysUp()
+        context.sendBroadcast(MouseLeave().getIntent())
         return true
     }
 
@@ -95,6 +102,7 @@ class BasicScreen : ScreenInterface {
     }
 
     override fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {}
+
     override fun mouseDown(buttonID: Int) {
         // todo simulate mouse button down? event
     }
@@ -114,18 +122,17 @@ class BasicScreen : ScreenInterface {
             return
         }
         if (mouseX < 0 || mouseY < 0) {
-            // Injection.movemouse(-width, -height);
-            // Injection.movemouse(x, y);
             mouseX = x
             mouseY = y
         } else {
             val dx = x - mouseX
             val dy = y - mouseY
-            //Injection.movemouse(dx, dy);
             // Adjust 'known' cursor position
             mouseX += dx
             mouseY += dy
         }
+
+        context.sendBroadcast(MouseMove(mouseX, mouseY).getIntent())
     }
 
     override fun mouseRelativeMove(x: Int, y: Int) {

@@ -146,6 +146,8 @@ class MainActivity : Activity() {
         Log.debug("accessibility enabled: $enabled")
         if (!enabled) {
             // show dialog
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
         }
     }
 
