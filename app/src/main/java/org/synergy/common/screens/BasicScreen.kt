@@ -41,6 +41,9 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     private var isMouseDown = false
     private var mouseDownCursorPosition: Point? = null
     private var isDragging = false
+    private val dragPoints = mutableListOf<Point>()
+    private var dragStartTime: Long = 0
+    private var dragEndTime: Long = 0
 
     // Screen dimensions
     private var width = 0
@@ -146,13 +149,18 @@ class BasicScreen(private val context: Context) : ScreenInterface {
 
     override fun mouseUp(buttonID: Int) {
         isMouseDown = false
-        if (longClickFuture?.isDone == true) {
-            // Long click event sent, skip the click event
+        if (isDragging) {
+            dragEndTime = Date().time
+            isDragging = false
+            context.sendBroadcast(Drag(dragPoints, dragEndTime - dragStartTime).getIntent())
+            dragPoints.clear()
+            dragStartTime = 0
+            dragEndTime = 0
+            // was dragging, so skip the click event
             return
         }
-        if (isDragging) {
-            // was dragging, so skip the click event
-            isDragging = false
+        if (longClickFuture?.isDone == true) {
+            // Long click event sent, skip the click event
             return
         }
         longClickFuture?.cancel(true)
@@ -170,37 +178,38 @@ class BasicScreen(private val context: Context) : ScreenInterface {
             return
         }
 
-        val prevPosition = Point(cursorPosition)
         cursorPosition.set(x, y)
 
         if (isMouseDown) {
-            mouseDownCursorPosition?.run {
-                val dx = cursorPosition.x - this.x
-                val dy = cursorPosition.y - this.y
-
-                if (dx.absoluteValue >= dragThreshold || dy.absoluteValue >= dragThreshold) {
-                    longClickFuture?.cancel(true)
-                    isDragging = true
-                    context.sendBroadcast(Drag(
-                        prevPosition.x,
-                        prevPosition.y,
-                        cursorPosition.x,
-                        cursorPosition.y,
-                    ).getIntent())
-                }
-            }
+            checkForDrag()
         }
 
         context.sendBroadcast(MouseMove(cursorPosition.x, cursorPosition.y).getIntent())
     }
 
-    override fun mouseRelativeMove(x: Int, y: Int) {
-        //Injection.movemouse(x, y);
+    private fun checkForDrag() {
+        if (isDragging) {
+            // directly add cursor position to dragPoints, without checking dx, dy
+            dragPoints.add(Point(cursorPosition))
+            return
+        }
+        mouseDownCursorPosition?.run {
+            val dx = cursorPosition.x - this.x
+            val dy = cursorPosition.y - this.y
+
+            if (dx.absoluteValue >= dragThreshold || dy.absoluteValue >= dragThreshold) {
+                longClickFuture?.cancel(true)
+                isDragging = true
+                dragStartTime = Date().time
+                dragPoints.clear()
+                dragPoints.add(Point(cursorPosition))
+            }
+        }
     }
 
-    override fun mouseWheel(x: Int, y: Int) {
-        //Injection.mousewheel(x, y);
-    }
+    override fun mouseRelativeMove(x: Int, y: Int) {}
+
+    override fun mouseWheel(x: Int, y: Int) {}
 
     private fun clearMousePosition() {
         longClickFuture?.cancel(true)
@@ -208,6 +217,9 @@ class BasicScreen(private val context: Context) : ScreenInterface {
         isMouseDown = false
         mouseDownCursorPosition = null
         isDragging = false
+        dragPoints.clear()
+        dragStartTime = 0
+        dragEndTime = 0
     }
 
     override fun getCursorPos(): Point {

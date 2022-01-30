@@ -1,6 +1,7 @@
 package org.synergy.services
 
 import android.content.Intent
+import android.graphics.Point
 
 sealed class BarrierAccessibilityAction(val intentAction: String) {
     abstract fun getIntent(): Intent
@@ -76,26 +77,25 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
     }
 
     data class Drag(
-        val fromX: Int,
-        val fromY: Int,
-        val toX: Int,
-        val toY: Int,
+        val dragPoints: List<Point>,
+        val duration: Long,
     ) : BarrierAccessibilityAction(DRAG_ACTION) {
         override fun getIntent(): Intent = Intent().apply {
             action = intentAction
-            putExtra("fromX", fromX)
-            putExtra("fromY", fromY)
-            putExtra("toX", toX)
-            putExtra("toY", toY)
+            putExtra("xArray", dragPoints.map { it.x }.toIntArray())
+            putExtra("yArray", dragPoints.map { it.y }.toIntArray())
+            putExtra("duration", duration)
         }
 
         companion object {
             fun parseIntent(intent: Intent): Drag = intent.run {
-                val fromX = getIntExtra("fromX", -1)
-                val fromY = getIntExtra("fromY", -1)
-                val toX = getIntExtra("toX", -1)
-                val toY = getIntExtra("toY", -1)
-                return Drag(fromX, fromY, toX, toY)
+                val xArray = getIntArrayExtra("xArray") ?: IntArray(0)
+                val yArray = getIntArrayExtra("yArray") ?: IntArray(0)
+                val duration = getLongExtra("duration", 0)
+                return Drag(
+                    xArray.zip(yArray).map { (x, y) -> Point(x, y) },
+                    duration,
+                )
             }
         }
     }

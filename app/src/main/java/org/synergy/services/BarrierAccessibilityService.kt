@@ -7,20 +7,20 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Path
 import android.graphics.PixelFormat
-import android.graphics.PointF
+import android.graphics.Point
 import android.os.Build
 import android.util.Log
 import android.view.Gravity
 import android.view.View
-import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
-import androidx.annotation.RequiresApi
 import org.synergy.R
 import org.synergy.services.BarrierAccessibilityAction.*
+import org.synergy.utils.GestureUtils.click
+import org.synergy.utils.GestureUtils.longClick
+import org.synergy.utils.GestureUtils.path
 
 
 class BarrierAccessibilityService : AccessibilityService() {
@@ -86,7 +86,7 @@ class BarrierAccessibilityService : AccessibilityService() {
             is MouseMove -> mouseMove(action.x, action.y)
             is MouseClick -> mouseClick(action.x, action.y)
             is MouseLongClick -> mouseLongClick(action.x, action.y)
-            is Drag -> drag(action.fromX, action.fromY, action.toX, action.toY)
+            is Drag -> drag(action.dragPoints, action.duration)
         }
     }
 
@@ -111,7 +111,7 @@ class BarrierAccessibilityService : AccessibilityService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             dispatchGesture(
                 GestureDescription.Builder()
-                    .addStroke(click(point(x - 1, y - 1)))
+                    .addStroke(click(Point(x - 1, y - 1)))
                     .build(),
                 null,
                 null,
@@ -124,7 +124,7 @@ class BarrierAccessibilityService : AccessibilityService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             dispatchGesture(
                 GestureDescription.Builder()
-                    .addStroke(longClick(point(x - 1, y - 1)))
+                    .addStroke(longClick(Point(x - 1, y - 1)))
                     .build(),
                 null,
                 null,
@@ -132,65 +132,22 @@ class BarrierAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun point(x: Int, y: Int) = PointF(x.toFloat(), y.toFloat())
-
-    private fun drag(fromX: Int, fromY: Int, toX: Int, toY: Int) {
-        // Log.d(TAG, "drag: $fromX, $fromY, $toX, $toY")
-        // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        //     val first = StrokeDescription(
-        //         Path().apply { moveTo(fromX.toFloat() - 1, fromY.toFloat() - 1) },
-        //         0,
-        //         ViewConfiguration.getTapTimeout().toLong(),
-        //         true,
-        //     )
-        //     val gesture = GestureDescription.Builder().apply {
-        //         addStroke(first)
-        //         addStroke(drag(first, PointF(toX.toFloat() - 1, toY.toFloat() - 1)))
-        //     }.build()
-        //     dispatchGesture(gesture, null, null)
-        // }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.N)
-    fun click(point: PointF) = StrokeDescription(
-        path(point),
-        0,
-        1L,
-    )
-
-    @RequiresApi(Build.VERSION_CODES.N)
-    fun longClick(point: PointF) = StrokeDescription(
-        path(point),
-        0,
-        ViewConfiguration.getLongPressTimeout().toLong()
-    )
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun drag(from: StrokeDescription, to: PointF) = from.continueStroke(
-        path(lastPointOf(from), to),
-        endTimeOf(from),
-        ViewConfiguration.getTapTimeout().toLong(),
-        true,
-    )
-
-    private fun path(first: PointF, vararg rest: PointF): Path {
-        val path = Path()
-        path.moveTo(first.x, first.y)
-        for (point in rest) {
-            path.lineTo(point.x, point.y)
+    private fun drag(dragPoints: List<Point>, duration: Long) {
+        Log.d(TAG, "drag: $dragPoints")
+        if (dragPoints.isEmpty()) {
+            return
         }
-        return path
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun lastPointOf(stroke: StrokeDescription): PointF {
-        val p = stroke.path.approximate(0.3f)
-        return PointF(p[p.size - 2], p[p.size - 1])
-    }
-
-    @RequiresApi(Build.VERSION_CODES.N)
-    private fun endTimeOf(stroke: StrokeDescription): Long {
-        return stroke.startTime + stroke.duration
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val stroke = StrokeDescription(
+                path(dragPoints),
+                0,
+                duration,
+            )
+            val gesture = GestureDescription.Builder()
+                .addStroke(stroke)
+                .build()
+            dispatchGesture(gesture, null, null)
+        }
     }
 
     companion object {
