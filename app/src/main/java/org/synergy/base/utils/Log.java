@@ -4,11 +4,11 @@
  * Copyright (C) 2010 The Synergy Project
  * Copyright (C) 2009 The Synergy+ Project
  * Copyright (C) 2002 Chris Schoeneman
- * 
+ *
  * This package is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * found in the file COPYING that should have accompanied this file.
- * 
+ *
  * This package is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -23,15 +23,15 @@ import java.util.ArrayList;
 
 /**
  * Logging class
- * 
- * Example usage:  
- * Log.fatal ("fatal error");
- * Log.debug1 ("debug1 printout")
- * 
- * Log.setLogLevel (Log.Level.FATAL)
- * 
- * @author Shaun Patterson
+ * <p>
+ * Example usage:
+ * <pre>
+ * Log.fatal("fatal error");
+ * Log.debug1("debug1 printout")
+ * Log.setLogLevel(Log.Level.FATAL)
+ * </pre>
  *
+ * @author Shaun Patterson
  */
 public class Log {
     public enum Level {
@@ -52,126 +52,130 @@ public class Log {
     // Current level of logging
     private static Level logLevel = Level.DEBUG;
 
-    private ArrayList <LogOutputterInterface> outputters;
-    private ArrayList <LogOutputterInterface> alwaysOutputters;
-    
+    private final ArrayList<LogOutputterInterface> outputters;
+    private final ArrayList<LogOutputterInterface> alwaysOutputters;
+
     private static Log log;
-    private static Object sync = new Object ();
-    private static Log getInstance () {
+    private static final Object sync = new Object();
+
+    private static Log getInstance() {
         synchronized (sync) {
             if (log == null) {
-                log = new Log ();
+                log = new Log();
             }
             return log;
         }
     }
-    
-    private Log () {
-    	this.outputters = new ArrayList <LogOutputterInterface> ();
-    	this.alwaysOutputters = new ArrayList <LogOutputterInterface> ();
-    	
-        this.insert (new AndroidLogOutputter(), false);
+
+    private Log() {
+        this.outputters = new ArrayList<>();
+        this.alwaysOutputters = new ArrayList<>();
+
+        this.insert(new AndroidLogOutputter(), false);
     }
 
-    private void insert (LogOutputterInterface outputter, boolean alwayAtHead) {
-    	if (alwayAtHead) {
-            alwaysOutputters.add (0, outputter);
+    private void insert(
+            LogOutputterInterface outputter,
+            @SuppressWarnings("SameParameterValue") boolean alwaysAtHead
+    ) {
+        if (alwaysAtHead) {
+            alwaysOutputters.add(0, outputter);
         } else {
-        	outputters.add (0, outputter);
+            outputters.add(0, outputter);
         }
     }
 
-    private void remove (LogOutputterInterface outputter) {
-        outputters.remove (outputter);
+    private void remove(LogOutputterInterface outputter) {
+        outputters.remove(outputter);
     }
-     
 
-    public void popFront (boolean alwaysAtHead) {
-        ArrayList <LogOutputterInterface> list = alwaysAtHead ? alwaysOutputters : outputters;
-        if (list.isEmpty() == false) {
-        	list.remove (0);
+    public void popFront(boolean alwaysAtHead) {
+        ArrayList<LogOutputterInterface> list = alwaysAtHead ? alwaysOutputters : outputters;
+        if (!list.isEmpty()) {
+            list.remove(0);
         }
     }
 
-    public static void setLogLevel (final Level level) {
+    public static void setLogLevel(final Level level) {
         logLevel = level;
     }
-    
-    public static Level getLogLevel () {
+
+    public static Level getLogLevel() {
         return logLevel;
     }
 
-
-    private void print (final Level level, final String message) {
-        if (level.compareTo (getLogLevel ()) > 0) {
+    private void print(final Level level, final String message) {
+        if (level.compareTo(getLogLevel()) > 0) {
             // Done
             return;
         }
 
-       // Get the calling method's class and the line number
-       StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-            
-       String tag = "Synergy";   
-       String formattedMessage = message;
-       try {
-			String caller = stackTraceElements[3].getClassName ();
-			int lineNum = stackTraceElements[3].getLineNumber ();
+        // Get the calling method's class and the line number
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
 
-			formattedMessage = caller + ":" + lineNum  + " : " + formattedMessage;
-		} catch (Exception ignored) {}
-		output (level, tag, level.name() + ":" + formattedMessage);
+        String tag = "Synergy";
+        String formattedMessage = message;
+        try {
+            String caller = stackTraceElements[3].getClassName();
+            int lineNum = stackTraceElements[3].getLineNumber();
+
+            formattedMessage = caller + ":" + lineNum + " : " + formattedMessage;
+        } catch (Exception ignored) {
+        }
+        output(level, tag, level.name() + ":" + formattedMessage);
     }
 
-    private void output (final Level level, final String tag, final String message) {
+    private void output(final Level level, final String tag, final String message) {
         for (LogOutputterInterface outputter : alwaysOutputters) {
-            outputter.write (level, tag, message);
+            outputter.write(level, tag, message);
         }
 
         for (LogOutputterInterface outputter : outputters) {
-            outputter.write (level, tag, message);
+            outputter.write(level, tag, message);
         }
     }
-    public static void print (String message) {
-        getInstance ().print (Level.PRINT, message);
+
+    public static void print(String message) {
+        getInstance().print(Level.PRINT, message);
     }
 
-    public static void fatal (String message) {
-        getInstance ().print (Level.FATAL, message);
+    public static void fatal(String message) {
+        getInstance().print(Level.FATAL, message);
     }
 
-    public static void error (String message) {
-        getInstance ().print (Level.ERROR, message);
+    public static void error(String message) {
+        getInstance().print(Level.ERROR, message);
     }
 
-    public static void info (String message) {
-    	getInstance().print(Level.INFO, message);
+    public static void info(String message) {
+        getInstance().print(Level.INFO, message);
     }
 
-    public static void note (String message) {
-    	getInstance().print(Level.NOTE, message);
-    }
-    
-    public static void debug (String message) {
-    	getInstance().print(Level.DEBUG, message);
-    }
-    
-    public static void debug1 (String message) {
-    	getInstance ().print(Level.DEBUG1, message);
-    }
-    
-    public static void debug2 (String message) {
-    	getInstance ().print(Level.DEBUG2, message);
-    }
-        
-    public static void debug3 (String message) {
-    	getInstance ().print(Level.DEBUG3, message);
-    }
-    
-    public static void debug4 (String message) {
-    	getInstance ().print(Level.DEBUG4, message);
+    public static void note(String message) {
+        getInstance().print(Level.NOTE, message);
     }
 
-    public static void debug5 (String message) {
-    	getInstance ().print(Level.DEBUG5, message);
+    public static void debug(String message) {
+        getInstance().print(Level.DEBUG, message);
+    }
+
+    public static void debug1(String message) {
+        getInstance().print(Level.DEBUG1, message);
+    }
+
+    public static void debug2(String message) {
+        getInstance().print(Level.DEBUG2, message);
+    }
+
+    public static void debug3(String message) {
+        getInstance().print(Level.DEBUG3, message);
+    }
+
+    public static void debug4(String message) {
+        getInstance().print(Level.DEBUG4, message);
+    }
+
+    public static void debug5(String message) {
+        getInstance().print(Level.DEBUG5, message);
     }
 }
