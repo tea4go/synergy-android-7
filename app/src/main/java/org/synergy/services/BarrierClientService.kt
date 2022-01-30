@@ -109,10 +109,6 @@ class BarrierClientService : Service() {
         basicScreen.setShape(screenWidth, screenHeight)
         Log.debug("Resolution: $screenWidth x $screenHeight")
 
-
-        //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
-        // Log.debug("Hostname: $clientName")
-
         client = Client(
             clientName,
             serverAddress,
@@ -134,10 +130,7 @@ class BarrierClientService : Service() {
                 @Suppress("BlockingMethodInNonBlockingContext")
                 client?.connect()
                 startEventQueue()
-                // Toast.makeText(applicationContext, "Device Connected", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
-                // Toast.makeText(applicationContext, "Connection Failed", Toast.LENGTH_LONG).show()
-                // Log.error(e.localizedMessage)
                 android.util.Log.e(TAG, "Error:", e)
                 stopSelf()
             }
@@ -147,12 +140,10 @@ class BarrierClientService : Service() {
     private fun startEventQueue() {
         val eventQueue = EventQueue.getInstance()
         var event = eventQueue.getEvent(-1.0)
-        // Log.note("Event grabbed")
         while (event.type != EventType.QUIT) {
             eventQueue.dispatchEvent(event)
             // TODO event.deleteData ();
             event = eventQueue.getEvent(-1.0)
-            // Log.note("Event grabbed")
         }
         android.util.Log.d(TAG, "startEventQueue: $event")
     }

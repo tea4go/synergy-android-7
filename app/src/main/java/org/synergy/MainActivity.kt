@@ -176,42 +176,6 @@ class MainActivity : Activity() {
                 BIND_AUTO_CREATE
             )
         }
-
-        // try {
-        //     val socketFactory: SocketFactoryInterface = TCPSocketFactory()
-        //     val serverAddress = NetworkAddress(ipAddress, port)
-        //
-        //     // TODO start the accessibility service injection here
-        //     val basicScreen = BasicScreen()
-        //     val wm = windowManager
-        //     val display = wm.defaultDisplay
-        //     basicScreen.setShape(display.width, display.height)
-        //     Log.debug("Resolution: " + display.width + " x " + display.height)
-        //
-        //
-        //     //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
-        //     Log.debug("Hostname: $clientName")
-        //     val client = Client(
-        //         applicationContext,
-        //         clientName,
-        //         serverAddress,
-        //         socketFactory,
-        //         null,
-        //         basicScreen
-        //     )
-        //     SynergyConnectTask().execute(client)
-        //     Toast.makeText(applicationContext, "Device Connected", Toast.LENGTH_LONG).show()
-        //
-        //     // TODO this looks quite hacky
-        //     if (mainLoopThread == null) {
-        //         MainLoopThread().also {
-        //             mainLoopThread = it
-        //         }.start()
-        //     }
-        // } catch (e: Exception) {
-        //     Toast.makeText(applicationContext, "Connection Failed", Toast.LENGTH_LONG).show()
-        //     e.printStackTrace()
-        // }
     }
 
     private fun disconnect() {
