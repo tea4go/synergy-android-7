@@ -36,6 +36,11 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import org.synergy.base.utils.Log
 import org.synergy.services.BarrierClientService
+import org.synergy.services.BarrierClientService.Companion.EXTRA_CLIENT_NAME
+import org.synergy.services.BarrierClientService.Companion.EXTRA_IP_ADDRESS
+import org.synergy.services.BarrierClientService.Companion.EXTRA_PORT
+import org.synergy.services.BarrierClientService.Companion.EXTRA_SCREEN_HEIGHT
+import org.synergy.services.BarrierClientService.Companion.EXTRA_SCREEN_WIDTH
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
 import org.synergy.utils.DisplayUtils
@@ -156,11 +161,11 @@ class MainActivity : Activity() {
             this,
             BarrierClientService::class.java,
         ).apply {
-            putExtra("ip_address", ipAddress)
-            putExtra("port", port)
-            putExtra("client_name", clientName)
-            putExtra("screen_width", displayBounds.width())
-            putExtra("screen_height", displayBounds.height())
+            putExtra(EXTRA_IP_ADDRESS, ipAddress)
+            putExtra(EXTRA_PORT, port)
+            putExtra(EXTRA_CLIENT_NAME, clientName)
+            putExtra(EXTRA_SCREEN_WIDTH, displayBounds.width())
+            putExtra(EXTRA_SCREEN_HEIGHT, displayBounds.height())
         }
 
         ContextCompat.startForegroundService(applicationContext, intent)

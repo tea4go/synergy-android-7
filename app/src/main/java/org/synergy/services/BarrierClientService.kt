@@ -42,11 +42,11 @@ class BarrierClientService : Service() {
             return START_NOT_STICKY
         }
 
-        val ipAddress = intent.getStringExtra("ip_address")
-        val port = intent.getIntExtra("port", -1)
-        val clientName = intent.getStringExtra("client_name")
-        val screenWidth = intent.getIntExtra("screen_width", -1)
-        val screenHeight = intent.getIntExtra("screen_height", -1)
+        val ipAddress = intent.getStringExtra(EXTRA_IP_ADDRESS)
+        val port = intent.getIntExtra(EXTRA_PORT, -1)
+        val clientName = intent.getStringExtra(EXTRA_CLIENT_NAME)
+        val screenWidth = intent.getIntExtra(EXTRA_SCREEN_WIDTH, -1)
+        val screenHeight = intent.getIntExtra(EXTRA_SCREEN_HEIGHT, -1)
 
         Log.debug("ipAddress: $ipAddress, port: $port, clientName: $clientName, resolution: ${screenWidth}x$screenHeight")
 
@@ -172,5 +172,11 @@ class BarrierClientService : Service() {
 
     companion object {
         private const val TAG = "BarrierClientService"
+
+        const val EXTRA_IP_ADDRESS = "ip_address"
+        const val EXTRA_PORT = "port"
+        const val EXTRA_CLIENT_NAME = "client_name"
+        const val EXTRA_SCREEN_WIDTH = "screen_width"
+        const val EXTRA_SCREEN_HEIGHT = "screen_height"
     }
 }
