@@ -23,9 +23,12 @@ object GestureUtils {
     )
 
     fun path(points: List<Point>): Path {
+        if (points.isEmpty()) {
+            return Path()
+        }
         val first = points.first()
         val rest = if (points.size > 1) {
-            points.subList(1, points.size - 1).toTypedArray()
+            points.subList(1, points.size).toTypedArray()
         } else {
             emptyArray()
         }

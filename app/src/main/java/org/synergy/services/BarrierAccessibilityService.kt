@@ -10,7 +10,6 @@ import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.os.Build
-import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -107,7 +106,7 @@ class BarrierAccessibilityService : AccessibilityService() {
     }
 
     private fun mouseClick(x: Int, y: Int) {
-        Log.d(TAG, "mouseClick: $x, $y")
+        // Log.d(TAG, "mouseClick: $x, $y")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             dispatchGesture(
                 GestureDescription.Builder()
@@ -120,7 +119,7 @@ class BarrierAccessibilityService : AccessibilityService() {
     }
 
     private fun mouseLongClick(x: Int, y: Int) {
-        Log.d(TAG, "mouseLongClick: $x, $y")
+        // Log.d(TAG, "mouseLongClick: $x, $y")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             dispatchGesture(
                 GestureDescription.Builder()
@@ -133,7 +132,7 @@ class BarrierAccessibilityService : AccessibilityService() {
     }
 
     private fun drag(dragPoints: List<Point>, duration: Long) {
-        Log.d(TAG, "drag: $dragPoints")
+        // Log.d(TAG, "drag: $dragPoints")
         if (dragPoints.isEmpty()) {
             return
         }

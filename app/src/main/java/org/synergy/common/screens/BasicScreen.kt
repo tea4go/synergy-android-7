@@ -23,6 +23,7 @@ import android.content.Context
 import android.graphics.Point
 import android.graphics.Rect
 import android.view.ViewConfiguration
+import android.view.ViewConfiguration.getTapTimeout
 import org.synergy.base.utils.Log
 import org.synergy.services.BarrierAccessibilityAction.*
 import java.util.*
@@ -209,7 +210,23 @@ class BasicScreen(private val context: Context) : ScreenInterface {
 
     override fun mouseRelativeMove(x: Int, y: Int) {}
 
-    override fun mouseWheel(x: Int, y: Int) {}
+    override fun mouseWheel(x: Int, y: Int) {
+        // Log.debug("mouse wheel: $x, $y")
+        val center = Point(width / 2, height / 2)
+        val point = Point(center).apply { offset(x, y) }
+        point.x = when {
+            point.x <= 0 -> 1
+            point.x >= width -> width - 1
+            else -> point.x
+        }
+        point.y = when {
+            point.y <= 0 -> 1
+            point.y >= height -> height - 1
+            else -> point.y
+        }
+        val dragPoints = listOf(center, point)
+        context.sendBroadcast(Drag(dragPoints, getTapTimeout().toLong()).getIntent())
+    }
 
     private fun clearMousePosition() {
         longClickFuture?.cancel(true)
