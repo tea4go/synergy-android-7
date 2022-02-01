@@ -25,6 +25,7 @@ import android.graphics.Rect
 import android.view.ViewConfiguration
 import android.view.ViewConfiguration.getTapTimeout
 import org.synergy.base.utils.Log
+import org.synergy.common.key.Key
 import org.synergy.services.BarrierAccessibilityAction.*
 import java.util.*
 import java.util.concurrent.Executors
@@ -34,10 +35,6 @@ import kotlin.math.absoluteValue
 
 
 class BasicScreen(private val context: Context) : ScreenInterface {
-    private val buttonToKeyDownID: IntArray = IntArray(256)
-
-    // Keep track of the mouse cursor since I cannot find a way of
-    //  determining the current mouse position
     private var cursorPosition = Point(-1, -1)
     private var isMouseDown = false
     private var mouseDownCursorPosition: Point? = null
@@ -54,13 +51,6 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     private var longClickFuture: ScheduledFuture<*>? = null
 
     private val dragThreshold = ViewConfiguration.get(context).scaledTouchSlop
-
-    init {
-        // the keyUp/Down/Repeat button parameter appears to be the low-level
-        // keyboard scan code (*shouldn't be* more than 256 of these, but I speak
-        // from anecdotal experience, not as an expert...
-        Arrays.fill(buttonToKeyDownID, -1)
-    }
 
     /**
      * Set the shape of the screen -- set from the initializing activity
@@ -93,35 +83,17 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     }
 
     private fun allKeysUp() {
-        // TODO Auto-generated method stub
+
     }
 
     override fun keyDown(id: Int, mask: Int, button: Int) {
-        // 1) 'button - 1' appears to be the low-level keyboard scan code
-        // 2) 'id' does not appear to be conserved between server keyDown
-        // and keyUp event broadcasts as the 'id' on *most* keyUp events
-        // appears to be set to 0.  'button' does appear to be conserved
-        // so we store the keyDown 'id' using this event so that we can
-        // pull out the 'id' used for keyDown for proper keyUp handling
-        if (button < buttonToKeyDownID.size) {
-            buttonToKeyDownID[button] = id
-        } else {
-            Log.note("found keyDown button parameter > " + buttonToKeyDownID.size + ", may not be able to properly handle keyUp event.")
-        }
-        // TODO simulate keydown press
+        Log.debug("keyDown: id: $id, mask: $mask, button: $button")
+        context.sendBroadcast(KeyDown(Key(id, mask, button)).getIntent())
     }
 
     override fun keyUp(id: Int, mask: Int, button: Int) {
-        var id1 = id
-        if (button < buttonToKeyDownID.size) {
-            val keyDownID = buttonToKeyDownID[button]
-            if (keyDownID > -1) {
-                id1 = keyDownID
-            }
-        } else {
-            Log.note("found keyUp button parameter > " + buttonToKeyDownID.size + ", may not be able to properly handle keyUp event.")
-        }
-        // TODO simulate keyup event
+        Log.debug("keyUp: id: $id, mask: $mask, button: $button")
+        context.sendBroadcast(KeyUp(Key(id, mask, button)).getIntent())
     }
 
     override fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {}
@@ -214,16 +186,8 @@ class BasicScreen(private val context: Context) : ScreenInterface {
         // Log.debug("mouse wheel: $x, $y")
         val center = Point(width / 2, height / 2)
         val point = Point(center).apply { offset(x, y) }
-        point.x = when {
-            point.x <= 0 -> 1
-            point.x >= width -> width - 1
-            else -> point.x
-        }
-        point.y = when {
-            point.y <= 0 -> 1
-            point.y >= height -> height - 1
-            else -> point.y
-        }
+        point.x = point.x.coerceIn(1, width - 1)
+        point.y = point.y.coerceIn(1, height - 1)
         val dragPoints = listOf(center, point)
         context.sendBroadcast(Drag(dragPoints, getTapTimeout().toLong()).getIntent())
     }

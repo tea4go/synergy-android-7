@@ -15,8 +15,13 @@ import android.view.View
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import org.synergy.R
+import org.synergy.common.key.Key
 import org.synergy.services.BarrierAccessibilityAction.*
+import org.synergy.utils.AccessibilityNodeInfoUtils.handleNonCharKey
+import org.synergy.utils.AccessibilityNodeInfoUtils.insertText
 import org.synergy.utils.GestureUtils.click
 import org.synergy.utils.GestureUtils.longClick
 import org.synergy.utils.GestureUtils.path
@@ -26,6 +31,11 @@ class BarrierAccessibilityService : AccessibilityService() {
     private lateinit var cursorView: View
     private lateinit var cursorLayout: LayoutParams
     private lateinit var windowManager: WindowManager
+
+    private val root: AccessibilityNodeInfoCompat
+        get() = AccessibilityNodeInfoCompat.wrap(rootInActiveWindow)
+
+    private var focusedInputNode: AccessibilityNodeInfoCompat? = null
 
     private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent) {
@@ -62,7 +72,14 @@ class BarrierAccessibilityService : AccessibilityService() {
         return START_STICKY
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        // Log.d(TAG, "onAccessibilityEvent: $event")
+        if (event.eventType != AccessibilityEvent.TYPE_VIEW_FOCUSED) {
+            return
+        }
+        focusedInputNode?.recycle() // recycle previous node
+        focusedInputNode = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+    }
 
     override fun onInterrupt() {}
 
@@ -86,6 +103,8 @@ class BarrierAccessibilityService : AccessibilityService() {
             is MouseClick -> mouseClick(action.x, action.y)
             is MouseLongClick -> mouseLongClick(action.x, action.y)
             is Drag -> drag(action.dragPoints, action.duration)
+            is KeyDown -> keyDown(action.key)
+            is KeyUp -> keyUp(action.key)
         }
     }
 
@@ -147,6 +166,31 @@ class BarrierAccessibilityService : AccessibilityService() {
                 .build()
             dispatchGesture(gesture, null, null)
         }
+    }
+
+    private fun keyDown(key: Key) {
+        if (key.isUnknown) {
+            return
+        }
+        if (key.isGlobalAction) {
+            // TODO: handle global action
+            return
+        }
+        focusedInputNode?.run {
+            if (!isFocused || !isEditable) {
+                return
+            }
+            if (key.isCharacter) {
+                insertText(this, key.id.toChar().toString())
+                refresh()
+                return
+            }
+            handleNonCharKey(this, key)
+        }
+    }
+
+    private fun keyUp(key: Key) {
+
     }
 
     companion object {

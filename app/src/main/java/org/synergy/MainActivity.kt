@@ -92,7 +92,7 @@ class MainActivity : Activity() {
         val connectButton = findViewById<Button>(R.id.connectButton)
         connectButton.setOnClickListener { connect() }
         if (BuildConfig.DEBUG) {
-            Log.setLogLevel(Log.Level.NOTE)
+            Log.setLogLevel(Log.Level.DEBUG)
         } else {
             Log.setLogLevel(Log.Level.ERROR)
         }
