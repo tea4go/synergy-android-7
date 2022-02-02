@@ -11,12 +11,13 @@ import android.graphics.PixelFormat
 import android.graphics.Point
 import android.os.Build
 import android.view.Gravity
+import android.view.KeyEvent.KEYCODE_ESCAPE
 import android.view.View
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_INPUT
 import org.synergy.R
 import org.synergy.common.key.Key
 import org.synergy.services.BarrierAccessibilityAction.*
@@ -78,7 +79,7 @@ class BarrierAccessibilityService : AccessibilityService() {
             return
         }
         focusedInputNode?.recycle() // recycle previous node
-        focusedInputNode = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+        focusedInputNode = root.findFocus(FOCUS_INPUT)
     }
 
     override fun onInterrupt() {}
@@ -173,7 +174,7 @@ class BarrierAccessibilityService : AccessibilityService() {
             return
         }
         if (key.isGlobalAction) {
-            // TODO: handle global action
+            handleGlobalActionKey(key)
             return
         }
         focusedInputNode?.run {
@@ -186,6 +187,15 @@ class BarrierAccessibilityService : AccessibilityService() {
                 return
             }
             handleNonCharKey(this, key)
+        }
+    }
+
+    private fun handleGlobalActionKey(key: Key) {
+        if (!key.isGlobalAction) {
+            return
+        }
+        when(key.keyCode) {
+            KEYCODE_ESCAPE -> performGlobalAction(GLOBAL_ACTION_BACK)
         }
     }
 
