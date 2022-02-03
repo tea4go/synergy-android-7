@@ -72,18 +72,12 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     override fun disable() {}
 
     override fun enter(toggleMask: Int) {
-        allKeysUp()
         context.sendBroadcast(MouseEnter().getIntent())
     }
 
     override fun leave(): Boolean {
-        allKeysUp()
         context.sendBroadcast(MouseLeave().getIntent())
         return true
-    }
-
-    private fun allKeysUp() {
-
     }
 
     override fun keyDown(id: Int, mask: Int, button: Int) {
