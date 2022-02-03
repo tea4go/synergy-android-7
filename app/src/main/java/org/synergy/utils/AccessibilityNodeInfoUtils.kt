@@ -5,7 +5,7 @@ import android.view.KeyEvent.KEYCODE_DEL
 import android.view.KeyEvent.KEYCODE_FORWARD_DEL
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.*
-import org.synergy.common.key.Key
+import org.synergy.common.key.BarrierKeyEvent
 
 
 object AccessibilityNodeInfoUtils {
@@ -90,12 +90,12 @@ object AccessibilityNodeInfoUtils {
 
     fun handleNonCharKey(
         node: AccessibilityNodeInfoCompat,
-        key: Key,
+        keyEvent: BarrierKeyEvent,
     ) {
-        if (key.isGlobalAction || !key.isNonChar) {
+        if (keyEvent.isGlobalAction || !keyEvent.isNonChar) {
             return
         }
-        when (key.keyCode) {
+        when (keyEvent.keyCode) {
             KEYCODE_DEL -> deleteText(node)
             KEYCODE_FORWARD_DEL -> deleteText(node, true)
         }

@@ -19,7 +19,7 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_INPUT
 import org.synergy.R
-import org.synergy.common.key.Key
+import org.synergy.common.key.BarrierKeyEvent
 import org.synergy.services.BarrierAccessibilityAction.*
 import org.synergy.utils.AccessibilityNodeInfoUtils.handleNonCharKey
 import org.synergy.utils.AccessibilityNodeInfoUtils.insertText
@@ -104,8 +104,8 @@ class BarrierAccessibilityService : AccessibilityService() {
             is MouseClick -> mouseClick(action.x, action.y)
             is MouseLongClick -> mouseLongClick(action.x, action.y)
             is Drag -> drag(action.dragPoints, action.duration)
-            is KeyDown -> keyDown(action.key)
-            is KeyUp -> keyUp(action.key)
+            is KeyDown -> keyDown(action.keyEvent)
+            is KeyUp -> keyUp(action.keyEvent)
         }
     }
 
@@ -169,38 +169,47 @@ class BarrierAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun keyDown(key: Key) {
-        if (key.isUnknown) {
+    private fun keyDown(keyEvent: BarrierKeyEvent) {
+        if (keyEvent.isUnknown) {
             return
         }
-        if (key.isGlobalAction) {
-            handleGlobalActionKey(key)
+        if (keyEvent.isModifier) {
+            // modifier keys are handled on key up
+            return
+        }
+        if (keyEvent.isGlobalAction) {
+            handleGlobalActionKey(keyEvent)
             return
         }
         focusedInputNode?.run {
             if (!isFocused || !isEditable) {
                 return
             }
-            if (key.isCharacter) {
-                insertText(this, key.id.toChar().toString())
+            if (keyEvent.isCharacter) {
+                insertText(this, keyEvent.id.toChar().toString())
                 refresh()
                 return
             }
-            handleNonCharKey(this, key)
+            handleNonCharKey(this, keyEvent)
         }
     }
 
-    private fun handleGlobalActionKey(key: Key) {
-        if (!key.isGlobalAction) {
+    private fun handleGlobalActionKey(keyEvent: BarrierKeyEvent) {
+        if (!keyEvent.isGlobalAction) {
             return
         }
-        when(key.keyCode) {
+        when(keyEvent.keyCode) {
             KEYCODE_ESCAPE -> performGlobalAction(GLOBAL_ACTION_BACK)
         }
     }
 
-    private fun keyUp(key: Key) {
+    private fun keyUp(keyEvent: BarrierKeyEvent) {
+        if (keyEvent.isUnknown) {
+            return
+        }
+        if (keyEvent.isModifier) {
 
+        }
     }
 
     companion object {

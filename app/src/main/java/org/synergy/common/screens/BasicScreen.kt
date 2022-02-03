@@ -25,7 +25,7 @@ import android.graphics.Rect
 import android.view.ViewConfiguration
 import android.view.ViewConfiguration.getTapTimeout
 import org.synergy.base.utils.Log
-import org.synergy.common.key.Key
+import org.synergy.common.key.BarrierKeyEvent
 import org.synergy.services.BarrierAccessibilityAction.*
 import java.util.*
 import java.util.concurrent.Executors
@@ -88,12 +88,12 @@ class BasicScreen(private val context: Context) : ScreenInterface {
 
     override fun keyDown(id: Int, mask: Int, button: Int) {
         Log.debug("keyDown: id: $id, mask: $mask, button: $button")
-        context.sendBroadcast(KeyDown(Key(id, mask, button)).getIntent())
+        context.sendBroadcast(KeyDown(BarrierKeyEvent(id, mask, button)).getIntent())
     }
 
     override fun keyUp(id: Int, mask: Int, button: Int) {
         Log.debug("keyUp: id: $id, mask: $mask, button: $button")
-        context.sendBroadcast(KeyUp(Key(id, mask, button)).getIntent())
+        context.sendBroadcast(KeyUp(BarrierKeyEvent(id, mask, button)).getIntent())
     }
 
     override fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {}

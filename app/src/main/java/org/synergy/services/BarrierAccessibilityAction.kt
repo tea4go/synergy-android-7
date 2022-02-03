@@ -2,7 +2,7 @@ package org.synergy.services
 
 import android.content.Intent
 import android.graphics.Point
-import org.synergy.common.key.Key
+import org.synergy.common.key.BarrierKeyEvent
 
 sealed class BarrierAccessibilityAction(val intentAction: String) {
     abstract fun getIntent(): Intent
@@ -101,12 +101,12 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
         }
     }
 
-    data class KeyDown(val key: Key) : BarrierAccessibilityAction(KEY_DOWN_ACTION) {
+    data class KeyDown(val keyEvent: BarrierKeyEvent) : BarrierAccessibilityAction(KEY_DOWN_ACTION) {
         override fun getIntent(): Intent = Intent().apply {
             action = intentAction
-            putExtra("id", key.id)
-            putExtra("mask", key.mask)
-            putExtra("scanCode", key.scanCode)
+            putExtra("id", keyEvent.id)
+            putExtra("mask", keyEvent.mask)
+            putExtra("scanCode", keyEvent.scanCode)
         }
 
         companion object {
@@ -114,17 +114,17 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
                 val id = getIntExtra("id", -1)
                 val mask = getIntExtra("mask", -1)
                 val scanCode = getIntExtra("scanCode", -1)
-                return KeyDown(Key(id, mask, scanCode))
+                return KeyDown(BarrierKeyEvent(id, mask, scanCode))
             }
         }
     }
 
-    data class KeyUp(val key: Key) : BarrierAccessibilityAction(KEY_UP_ACTION) {
+    data class KeyUp(val keyEvent: BarrierKeyEvent) : BarrierAccessibilityAction(KEY_UP_ACTION) {
         override fun getIntent(): Intent = Intent().apply {
             action = intentAction
-            putExtra("id", key.id)
-            putExtra("mask", key.mask)
-            putExtra("scanCode", key.scanCode)
+            putExtra("id", keyEvent.id)
+            putExtra("mask", keyEvent.mask)
+            putExtra("scanCode", keyEvent.scanCode)
         }
 
         companion object {
@@ -132,7 +132,7 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
                 val id = getIntExtra("id", -1)
                 val mask = getIntExtra("mask", -1)
                 val scanCode = getIntExtra("scanCode", -1)
-                return KeyUp(Key(id, mask, scanCode))
+                return KeyUp(BarrierKeyEvent(id, mask, scanCode))
             }
         }
     }
