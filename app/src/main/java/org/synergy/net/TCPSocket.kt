@@ -17,105 +17,69 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.net;
+package org.synergy.net
 
-import android.util.Log;
+import org.synergy.base.Event
+import org.synergy.base.EventQueue
+import org.synergy.base.EventType
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.InetSocketAddress
+import java.net.Socket
 
-import org.synergy.base.Event;
-import org.synergy.base.EventQueue;
-import org.synergy.base.EventType;
+class TCPSocket : DataSocketInterface {
+    private val socket = Socket()
+    private var connected = false
+    private var readable = false
+    private var writable = false
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+    private fun onConnected() {
+        connected = true
+        readable = true
+        writable = true
+    }
 
-public class TCPSocket implements DataSocketInterface {
+    override fun bind(address: NetworkAddress) {}
 
-    private static final int SOCKET_CONNECTION_TIMEOUT_IN_MILLIS = 1000;
-
-    private Socket socket;
-
-    private boolean connected = false;
-    private boolean readable = false;
-    private boolean writable = false;
-
-    public TCPSocket() {
+    override fun close() {
         try {
-            socket = new Socket();
-
-
-        } catch (Exception e) {
-            // TODO
-            e.printStackTrace();
-        }
-
-    }
-
-    private void init() {
-        // default state
-        connected = false;
-        readable = false;
-        writable = false;
-
-    }
-
-    private void onConnected() {
-        connected = true;
-        readable = true;
-        writable = true;
-    }
-
-
-    public void finalize() throws Throwable {
-    }
-
-    public void bind(final NetworkAddress address) {
-    }
-
-    public void close() {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            Log.e("TCPSocket", "close: ", e);
+            socket.close()
+        } catch (e: IOException) {
         }
     }
 
-    public boolean isReady() {
-        return connected;
-    }
+    override fun isReady() = connected
 
-    public InputStream getInputStream() throws IOException {
-        return socket.getInputStream();
-    }
+    @Throws(IOException::class)
+    override fun getInputStream(): InputStream = socket.getInputStream()
 
-    public OutputStream getOutputStream() throws IOException {
-        return socket.getOutputStream();
-    }
+    @Throws(IOException::class)
+    override fun getOutputStream(): OutputStream = socket.getOutputStream()
 
-    public void connect(final NetworkAddress address)
-            throws IOException {
-        // TODO
-        socket.connect(new InetSocketAddress(address.getAddress(), address.getPort()),
-                SOCKET_CONNECTION_TIMEOUT_IN_MILLIS);
+    @Throws(IOException::class)
+    override fun connect(address: NetworkAddress) {
+        socket.connect(
+            InetSocketAddress(address.address, address.port),
+            SOCKET_CONNECTION_TIMEOUT_IN_MILLIS
+        )
 
         // Turn off Nagle's algorithm and set traffic type (RFC 1349) to minimize delay
         // to avoid mouse pointer "lagging"
-        socket.setTcpNoDelay(true);
-        socket.setTrafficClass(8);
-
-        sendEvent(EventType.SOCKET_CONNECTED);
-        onConnected();
-        sendEvent(EventType.STREAM_INPUT_READY);
+        socket.tcpNoDelay = true
+        socket.trafficClass = 8
+        sendEvent(EventType.SOCKET_CONNECTED)
+        onConnected()
+        sendEvent(EventType.STREAM_INPUT_READY)
     }
 
-    public Object getEventTarget() {
-        return this;
+    override fun getEventTarget() = this
+
+    private fun sendEvent(eventType: EventType) {
+        EventQueue.getInstance().addEvent(Event(eventType, getEventTarget(), null))
     }
 
-    private void sendEvent(EventType eventType) {
-        EventQueue.getInstance().addEvent(new Event(eventType, getEventTarget(), null));
+    companion object {
+        private const val SOCKET_CONNECTION_TIMEOUT_IN_MILLIS = 1000
     }
-
 }
