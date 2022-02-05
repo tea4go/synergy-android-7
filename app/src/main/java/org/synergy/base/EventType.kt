@@ -36,35 +36,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base;
+package org.synergy.base
 
-public enum EventType {
-
+enum class EventType {
     UNKNOWN,
     QUIT,
     SYSTEM,
     TIMER,
-
     SOCKET_CONNECTED,
     SOCKET_CONNECT_FAILED,
     SOCKET_DISCONNECTED,
-
     STREAM_INPUT_READY,
     STREAM_INPUT_SHUTDOWN,
     STREAM_OUTPUT_FLUSHED,
     STREAM_OUTPUT_ERROR,
     STREAM_OUTPUT_SHUTDOWN,
-
     CLIENT_CONNECTED,
     CLIENT_CONNECT_FAILED,
     CLIENT_DISCONNECTED,
-
-
     SHAPE_CHANGED,
-
     CLIPBOARD_GRABBED,
-
     SCREEN_SUSPEND,
     SCREEN_RESUME,
-
 }
