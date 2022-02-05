@@ -17,37 +17,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base;
+package org.synergy.base
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
-public class SimpleEventQueueBuffer implements EventQueueBuffer {
-    private BlockingQueue<Integer> queue;
+class SimpleEventQueueBuffer : EventQueueBuffer {
+    private val queue: BlockingQueue<Int>
 
-    public SimpleEventQueueBuffer() {
+    init {
         // TODO: NOTE: This WAS a LinkedBlockingDeque but Android does not support that
         //
         // Need to reevaluate the workings there and make sure everything is going to work
-        queue = new LinkedBlockingQueue<Integer>();
+        queue = LinkedBlockingQueue()
     }
 
-    public EventData getEvent() throws InterruptedException {
-        Integer dataID = queue.take();
-        return new EventData(EventData.Type.USER, null, dataID);
+    @Throws(InterruptedException::class)
+    override fun getEvent(): EventData {
+        val dataID = queue.take()
+        return EventData(EventData.Type.USER, null, dataID)
     }
 
-    public EventData getEvent(double timeout) throws InterruptedException {
-        Integer dataID = queue.poll((long) (timeout * 1000.0), TimeUnit.MILLISECONDS);
-        return new EventData(EventData.Type.USER, null, dataID);
+    @Throws(InterruptedException::class)
+    override fun getEvent(timeout: Double): EventData {
+        val dataID = queue.poll((timeout * 1000.0).toLong(), TimeUnit.MILLISECONDS)
+        return EventData(EventData.Type.USER, null, dataID)
     }
 
-    public void addEvent(Integer dataID) throws InterruptedException {
-        queue.put(dataID);
+    @Throws(InterruptedException::class)
+    override fun addEvent(dataID: Int) {
+        queue.put(dataID)
     }
 
-    public boolean isEmpty() {
-        return queue.isEmpty();
-    }
+    override val isEmpty: Boolean
+        get() = queue.isEmpty()
 }

@@ -14,7 +14,7 @@ interface EventQueueBuffer {
     fun getEvent(): EventData?
 
     @Throws(InterruptedException::class)
-    fun addEvent(dataID: Int?)
+    fun addEvent(dataID: Int)
 
     //public EventQueueTimer newTimer (double duration, boolean oneShot);
 
