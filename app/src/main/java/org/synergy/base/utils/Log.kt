@@ -17,13 +17,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base.utils;
-
-import java.util.ArrayList;
+package org.synergy.base.utils
 
 /**
  * Logging class
- * <p>
+ *
  * Example usage:
  * <pre>
  * Log.fatal("fatal error");
@@ -33,8 +31,13 @@ import java.util.ArrayList;
  *
  * @author Shaun Patterson
  */
-public class Log {
-    public enum Level {
+class Log private constructor() {
+
+    init {
+        insert(AndroidLogOutputter(), false)
+    }
+
+    enum class Level {
         FATAL,
         ERROR,
         WARNING,
@@ -46,136 +49,125 @@ public class Log {
         DEBUG5,
         NOTE,
         INFO,
-        PRINT
+        PRINT,
     }
 
-    // Current level of logging
-    private static Level logLevel = Level.DEBUG;
+    private val outputters = mutableListOf<LogOutputterInterface>()
+    private val alwaysOutputters = mutableListOf<LogOutputterInterface>()
 
-    private final ArrayList<LogOutputterInterface> outputters;
-    private final ArrayList<LogOutputterInterface> alwaysOutputters;
-
-    private static Log log;
-    private static final Object sync = new Object();
-
-    private static Log getInstance() {
-        synchronized (sync) {
-            if (log == null) {
-                log = new Log();
-            }
-            return log;
-        }
-    }
-
-    private Log() {
-        this.outputters = new ArrayList<>();
-        this.alwaysOutputters = new ArrayList<>();
-
-        this.insert(new AndroidLogOutputter(), false);
-    }
-
-    private void insert(
-            LogOutputterInterface outputter,
-            @SuppressWarnings("SameParameterValue") boolean alwaysAtHead
+    private fun insert(
+        outputter: LogOutputterInterface,
+        alwaysAtHead: Boolean
     ) {
         if (alwaysAtHead) {
-            alwaysOutputters.add(0, outputter);
+            alwaysOutputters.add(0, outputter)
         } else {
-            outputters.add(0, outputter);
+            outputters.add(0, outputter)
         }
     }
 
-    private void remove(LogOutputterInterface outputter) {
-        outputters.remove(outputter);
+    private fun remove(outputter: LogOutputterInterface) {
+        outputters.remove(outputter)
     }
 
-    public void popFront(boolean alwaysAtHead) {
-        ArrayList<LogOutputterInterface> list = alwaysAtHead ? alwaysOutputters : outputters;
-        if (!list.isEmpty()) {
-            list.remove(0);
+    fun popFront(alwaysAtHead: Boolean) {
+        val list = if (alwaysAtHead) alwaysOutputters else outputters
+        if (list.isNotEmpty()) {
+            list.removeAt(0)
         }
     }
 
-    public static void setLogLevel(final Level level) {
-        logLevel = level;
-    }
-
-    public static Level getLogLevel() {
-        return logLevel;
-    }
-
-    private void print(final Level level, final String message) {
-        if (level.compareTo(getLogLevel()) > 0) {
+    private fun print(level: Level, message: String) {
+        if (level > logLevel) {
             // Done
-            return;
+            return
         }
 
         // Get the calling method's class and the line number
-        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-
-        String tag = "Synergy";
-        String formattedMessage = message;
+        val stackTraceElements = Thread.currentThread().stackTrace
+        val tag = "Synergy"
+        var formattedMessage = message
         try {
-            String caller = stackTraceElements[3].getClassName();
-            int lineNum = stackTraceElements[3].getLineNumber();
-
-            formattedMessage = caller + ":" + lineNum + " : " + formattedMessage;
-        } catch (Exception ignored) {
+            val caller = stackTraceElements[3].className
+            val lineNum = stackTraceElements[3].lineNumber
+            formattedMessage = "$caller:$lineNum : $formattedMessage"
+        } catch (ignored: Exception) {
         }
-        output(level, tag, level.name() + ":" + formattedMessage);
+        output(level, tag, level.name + ":" + formattedMessage)
     }
 
-    private void output(final Level level, final String tag, final String message) {
-        for (LogOutputterInterface outputter : alwaysOutputters) {
-            outputter.write(level, tag, message);
+    private fun output(level: Level, tag: String, message: String) {
+        for (outputter in alwaysOutputters) {
+            outputter.write(level, tag, message)
         }
-
-        for (LogOutputterInterface outputter : outputters) {
-            outputter.write(level, tag, message);
+        for (outputter in outputters) {
+            outputter.write(level, tag, message)
         }
     }
 
-    public static void print(String message) {
-        getInstance().print(Level.PRINT, message);
-    }
+    companion object {
+        // Current level of logging
+        var logLevel = Level.DEBUG
 
-    public static void fatal(String message) {
-        getInstance().print(Level.FATAL, message);
-    }
+        @Volatile
+        private var instance: Log? = null
 
-    public static void error(String message) {
-        getInstance().print(Level.ERROR, message);
-    }
+        @JvmStatic
+        fun getInstance() = instance ?: synchronized(this) { Log() }
 
-    public static void info(String message) {
-        getInstance().print(Level.INFO, message);
-    }
+        @JvmStatic
+        fun print(message: String) {
+            getInstance().print(Level.PRINT, message)
+        }
 
-    public static void note(String message) {
-        getInstance().print(Level.NOTE, message);
-    }
+        @JvmStatic
+        fun fatal(message: String) {
+            getInstance().print(Level.FATAL, message)
+        }
 
-    public static void debug(String message) {
-        getInstance().print(Level.DEBUG, message);
-    }
+        @JvmStatic
+        fun error(message: String) {
+            getInstance().print(Level.ERROR, message)
+        }
 
-    public static void debug1(String message) {
-        getInstance().print(Level.DEBUG1, message);
-    }
+        @JvmStatic
+        fun info(message: String) {
+            getInstance().print(Level.INFO, message)
+        }
 
-    public static void debug2(String message) {
-        getInstance().print(Level.DEBUG2, message);
-    }
+        @JvmStatic
+        fun note(message: String) {
+            getInstance().print(Level.NOTE, message)
+        }
 
-    public static void debug3(String message) {
-        getInstance().print(Level.DEBUG3, message);
-    }
+        @JvmStatic
+        fun debug(message: String) {
+            getInstance().print(Level.DEBUG, message)
+        }
 
-    public static void debug4(String message) {
-        getInstance().print(Level.DEBUG4, message);
-    }
+        @JvmStatic
+        fun debug1(message: String) {
+            getInstance().print(Level.DEBUG1, message)
+        }
 
-    public static void debug5(String message) {
-        getInstance().print(Level.DEBUG5, message);
+        @JvmStatic
+        fun debug2(message: String) {
+            getInstance().print(Level.DEBUG2, message)
+        }
+
+        @JvmStatic
+        fun debug3(message: String) {
+            getInstance().print(Level.DEBUG3, message)
+        }
+
+        @JvmStatic
+        fun debug4(message: String) {
+            getInstance().print(Level.DEBUG4, message)
+        }
+
+        @JvmStatic
+        fun debug5(message: String) {
+            getInstance().print(Level.DEBUG5, message)
+        }
     }
 }
