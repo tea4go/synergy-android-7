@@ -28,7 +28,6 @@ import org.synergy.base.EventType
 import org.synergy.base.utils.Log
 import org.synergy.common.screens.ScreenInterface
 import org.synergy.io.Stream
-import org.synergy.io.StreamFilterFactoryInterface
 import org.synergy.io.msgs.EnterMessage
 import org.synergy.io.msgs.HelloBackMessage
 import org.synergy.io.msgs.HelloMessage
@@ -43,7 +42,7 @@ class Client(
     private val name: String,
     private val serverAddress: NetworkAddress,
     private val socketFactory: SocketFactoryInterface,
-    private val streamFilterFactory: StreamFilterFactoryInterface?,
+    // private val streamFilterFactory: StreamFilterFactoryInterface?,
     private val screen: ScreenInterface,
     private val connectionChangeListener: (Boolean) -> Unit,
 ) : EventTarget {
@@ -76,9 +75,9 @@ class Client(
 
         // filter socket messages, including a packetizing filter
         stream = socket
-        if (streamFilterFactory != null) {
-            // TODO stream = streamFilterFactory.create (stream, true);
-        }
+        // if (streamFilterFactory != null) {
+        // TODO stream = streamFilterFactory.create (stream, true);
+        // }
 
         // connect
         Log.debug("connecting to server")
@@ -175,11 +174,9 @@ class Client(
                 )
             }
         } catch (e: Exception) {
-            Log.error(e.localizedMessage)
+            Log.error(e.localizedMessage ?: "")
         }
     }
-
-    private fun handleOutputError() {}
 
     private fun setupConnection() = stream?.run {
         EventQueue.getInstance().adoptHandler(

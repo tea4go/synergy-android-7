@@ -113,7 +113,7 @@ class BarrierClientService : Service() {
             clientName,
             serverAddress,
             socketFactory,
-            null,
+            // null,
             basicScreen
         ) { connected ->
             onConnectionChangeListeners.forEach { it(connected) }
