@@ -20,7 +20,7 @@
 package org.synergy.base.interfaces;
 
 import org.synergy.base.Event;
-import org.synergy.base.exceptions.InvalidMessageException;
+import org.synergy.base.InvalidMessageException;
 import org.synergy.base.interfaces.EventQueueBuffer;
 
 public interface EventQueueInterface {

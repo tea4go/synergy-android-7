@@ -19,7 +19,6 @@
  */
 package org.synergy.base;
 
-import org.synergy.base.exceptions.InvalidMessageException;
 import org.synergy.base.interfaces.EventJobInterface;
 import org.synergy.base.interfaces.EventQueueBuffer;
 import org.synergy.base.interfaces.EventQueueInterface;
