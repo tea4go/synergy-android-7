@@ -136,7 +136,6 @@ enum class MessageType(val value: String, private val commonName: String) {
     override fun toString() = commonName
 
     companion object {
-        @JvmStatic
         fun fromString(messageValue: String) = values().find {
             messageValue.equals(it.value, ignoreCase = true)
         } ?: throw IllegalArgumentException("No MessageType with value $messageValue")

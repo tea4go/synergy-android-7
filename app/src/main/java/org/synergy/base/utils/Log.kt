@@ -112,62 +112,50 @@ class Log private constructor() {
         @Volatile
         private var instance: Log? = null
 
-        @JvmStatic
         fun getInstance() = instance ?: synchronized(this) {
             Log().also { instance = it }
         }
 
-        @JvmStatic
         fun print(message: String) {
             getInstance().print(Level.PRINT, message)
         }
 
-        @JvmStatic
         fun fatal(message: String) {
             getInstance().print(Level.FATAL, message)
         }
 
-        @JvmStatic
         fun error(message: String) {
             getInstance().print(Level.ERROR, message)
         }
 
-        @JvmStatic
         fun info(message: String) {
             getInstance().print(Level.INFO, message)
         }
 
-        @JvmStatic
         fun note(message: String) {
             getInstance().print(Level.NOTE, message)
         }
 
-        @JvmStatic
         fun debug(message: String) {
             getInstance().print(Level.DEBUG, message)
         }
 
-        @JvmStatic
         fun debug1(message: String) {
             getInstance().print(Level.DEBUG1, message)
         }
 
-        @JvmStatic
         fun debug2(message: String) {
             getInstance().print(Level.DEBUG2, message)
         }
 
-        @JvmStatic
         fun debug3(message: String) {
             getInstance().print(Level.DEBUG3, message)
         }
 
-        @JvmStatic
         fun debug4(message: String) {
             getInstance().print(Level.DEBUG4, message)
         }
 
-        @JvmStatic
         fun debug5(message: String) {
             getInstance().print(Level.DEBUG5, message)
         }

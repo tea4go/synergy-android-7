@@ -42,7 +42,6 @@ abstract class Message {
 
     private var data: ByteArrayOutputStream
 
-    @JvmField
     protected var dataStream: MessageDataOutputStream
 
     /**

@@ -19,12 +19,10 @@
  */
 package org.synergy.base
 
-import kotlin.jvm.JvmOverloads
-
 /**
  * @author Shaun Patterson
  */
-class Event @JvmOverloads constructor(
+class Event constructor(
     val type: EventType = EventType.UNKNOWN,
     val target: Any? = null,
     val data: Any? = null,
@@ -43,7 +41,6 @@ class Event @JvmOverloads constructor(
     }
 
     companion object {
-        @JvmStatic
         fun deleteData(event: Event?) {
             // TODO
         }
