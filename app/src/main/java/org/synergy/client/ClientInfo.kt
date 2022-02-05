@@ -17,33 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.client;
+package org.synergy.client
 
-import android.graphics.*;
+import android.graphics.Point
+import android.graphics.Rect
 
-public class ClientInfo {
-
-    Rect screenPosition;
-    Point cursorPos;
-
-    public ClientInfo(Rect screenPosition, Point cursorPos) {
-        this.screenPosition = screenPosition;
-        this.cursorPos = cursorPos;
-    }
-
-    public Rect getScreenPosition() {
-        return screenPosition;
-    }
-
-    public void setScreenPosition(Rect screenPosition) {
-        this.screenPosition = screenPosition;
-    }
-
-    public Point getCursorPos() {
-        return cursorPos;
-    }
-
-    public void setCursorPos(Point cursorPos) {
-        this.cursorPos = cursorPos;
-    }
-}
+data class ClientInfo(
+    var screenPosition: Rect,
+    var cursorPos: Point,
+)
