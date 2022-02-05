@@ -17,40 +17,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io;
+package org.synergy.io
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.DataOutputStream
+import java.io.IOException
+import java.io.OutputStream
+import kotlin.Throws
 
 /**
  * Data Output Stream for messages
- * <p>
+ *
  * This class was specifically designed for writing strings in messages.
- * <p>
+ *
  * Strings are written as: String length (int) + String
- * *
  *
  * @author Shaun Patterson
  */
-
-public class MessageDataOutputStream extends DataOutputStream {
-
-    public MessageDataOutputStream(OutputStream out) {
-        super(out);
-    }
-
-
+class MessageDataOutputStream(out: OutputStream) : DataOutputStream(out) {
     /**
      * Writes the string length and the string.
      *
      * @param str to write
      * @throws IOException
      */
-    public void writeString(String str) throws IOException {
-        super.writeInt(str.length());
-        super.write(str.getBytes("UTF8"));
+    @Throws(IOException::class)
+    fun writeString(str: String) {
+        super.writeInt(str.length)
+        super.write(str.toByteArray(charset("UTF8")))
     }
-
-
 }
