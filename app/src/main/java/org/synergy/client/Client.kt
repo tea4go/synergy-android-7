@@ -23,8 +23,8 @@ import android.graphics.Point
 import android.graphics.Rect
 import org.synergy.base.Event
 import org.synergy.base.EventQueue
+import org.synergy.base.EventTarget
 import org.synergy.base.EventType
-import org.synergy.base.interfaces.EventTarget
 import org.synergy.base.utils.Log
 import org.synergy.common.screens.ScreenInterface
 import org.synergy.io.Stream

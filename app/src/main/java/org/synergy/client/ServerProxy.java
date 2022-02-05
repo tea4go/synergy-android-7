@@ -19,12 +19,8 @@
  */
 package org.synergy.client;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
 import org.synergy.base.Event;
-import org.synergy.base.interfaces.EventJobInterface;
+import org.synergy.base.EventJobInterface;
 import org.synergy.base.EventQueue;
 import org.synergy.base.EventQueueTimer;
 import org.synergy.base.EventType;
@@ -46,6 +42,10 @@ import org.synergy.io.msgs.MouseWheelMessage;
 import org.synergy.io.msgs.ResetOptionsMessage;
 import org.synergy.io.msgs.ScreenSaverMessage;
 import org.synergy.io.msgs.SetOptionsMessage;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 public class ServerProxy {
     private static final double KEEP_ALIVE_UNTIL_DEATH = 3.0;
@@ -93,12 +93,11 @@ public class ServerProxy {
         // TODO Key modifier table
 
         // handle data on stream
-        EventQueue.getInstance().adoptHandler(EventType.STREAM_INPUT_READY, stream.getEventTarget(),
-                new EventJobInterface() {
-                    public void run(Event event) {
-                        handleData();
-                    }
-                });
+        EventQueue.getInstance().adoptHandler(
+                EventType.STREAM_INPUT_READY,
+                stream.getEventTarget(),
+                event -> handleData()
+        );
 
         // send heartbeat
         setKeepAliveRate(KEEP_ALIVE_RATE);

@@ -19,8 +19,6 @@
  */
 package org.synergy.base;
 
-import org.synergy.base.interfaces.EventJobInterface;
-
 import java.util.Timer;
 import java.util.TimerTask;
 

@@ -19,8 +19,6 @@
  */
 package org.synergy.base;
 
-import org.synergy.base.interfaces.EventQueueBuffer;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;

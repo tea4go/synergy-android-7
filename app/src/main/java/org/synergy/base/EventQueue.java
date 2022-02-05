@@ -19,9 +19,6 @@
  */
 package org.synergy.base;
 
-import org.synergy.base.interfaces.EventJobInterface;
-import org.synergy.base.interfaces.EventQueueBuffer;
-import org.synergy.base.interfaces.EventQueueInterface;
 import org.synergy.base.utils.Log;
 
 import java.util.HashMap;
