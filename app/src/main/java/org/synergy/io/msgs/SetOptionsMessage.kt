@@ -28,7 +28,7 @@ class SetOptionsMessage(header: MessageHeader, din: DataInputStream) : Message()
         val options = ArrayList<Int>()
 
         // Read off a list of integers until all the data defined in the header has been read
-        var dataLeft = header.dataSize
+        var dataLeft = header.dataSize ?: 0
         while (dataLeft > 0) {
             options.add(Integer.valueOf(din.readInt()))
             dataLeft -= INT_SIZE

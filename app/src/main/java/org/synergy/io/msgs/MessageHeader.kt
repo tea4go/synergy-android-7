@@ -17,88 +17,74 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import org.synergy.io.msgs.MessageType.Companion.fromString
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.IOException
 
 /**
  * Describes a message header
- * 
- * Size = 
- *  length of message type +
- *  message data size (see Message.write)
+ *
+ * Size =
+ * length of message type +
+ * message data size (see Message.write)
  */
-public class MessageHeader {
-	private final static int MESSAGE_TYPE_SIZE = 4;
-	
-	private Integer size;
-	private Integer dataSize;
-	private MessageType type;
-	
-	public MessageHeader (MessageType type) {
-		this.type = type;
-		this.size = type.getValue ().length ();
-		this.dataSize = null;  // User must set
-	}
-	
-	public MessageHeader (String type) {
-		this.type = MessageType.fromString (type);
-		this.size = this.type.getValue ().length ();
-		this.dataSize = null;  // User must set
-	}
-	
-	/**
-	 * Read in a message header
-	 * @param din Data input stream from socket
-	 */
-	public MessageHeader (DataInputStream din) throws IOException {
-		int messageSize = din.readInt ();
-		
-		
-		byte messageTypeBytes [] = new byte [MESSAGE_TYPE_SIZE];
-        din.read (messageTypeBytes, 0, MESSAGE_TYPE_SIZE);
-        this.type = MessageType.fromString (new String (messageTypeBytes));
-		this.size = MESSAGE_TYPE_SIZE;
-        this.dataSize = messageSize - this.size;
-	}
-	
-	/**
-	 * Set the size of the DATA passed along with this message
-	 * @param dataSize
-	 */
-	public void setDataSize (int dataSize) {
-		this.dataSize = dataSize;
-	}
-	
-	/**
-	 * Get the size of the data in the message
-	 */
-	public int getDataSize () {
-		return this.dataSize;
-	}
-	
-	/**
-	 * Get the message type for the message this header describes
-	 * @return
-	 */
-	public MessageType getType () {
-		return type;
-	}
-	
-	public void write (DataOutputStream dout) throws IOException {
-		if (dataSize == null) {
-			throw new IOException ("Message header size is null");
-		}
-		
-		dout.writeInt(size + dataSize);
-		dout.write (type.getValue ().getBytes("UTF8"));
-		
-	}
+class MessageHeader {
+    /**
+     * Get the size of the data in the message
+     */
+    private var size: Int
 
-	public String toString () {
-		return "MessageHeader:" + size + ":" + dataSize + ":" + type;
-	}
-	
+    /**
+     * Set the size of the DATA passed along with this message
+     */
+    var dataSize: Int?
+
+    /**
+     * Get the message type for the message this header describes
+     */
+    var type: MessageType
+        private set
+
+    constructor(type: MessageType) {
+        this.type = type
+        size = type.value.length
+        dataSize = null // User must set
+    }
+
+    constructor(type: String) {
+        this.type = fromString(type)
+        size = this.type.value.length
+        dataSize = null // User must set
+    }
+
+    /**
+     * Read in a message header
+     * @param din Data input stream from socket
+     */
+    constructor(din: DataInputStream) {
+        val messageSize = din.readInt()
+        val messageTypeBytes = ByteArray(MESSAGE_TYPE_SIZE)
+        din.read(messageTypeBytes, 0, MESSAGE_TYPE_SIZE)
+        type = fromString(String(messageTypeBytes))
+        size = MESSAGE_TYPE_SIZE
+        dataSize = messageSize - size
+    }
+
+    @Throws(IOException::class)
+    fun write(dout: DataOutputStream) {
+        val dataSize = dataSize ?: throw IOException("Message header size is null")
+        dout.writeInt(size + dataSize)
+        dout.write(type.value.toByteArray(charset("UTF8")))
+    }
+
+    override fun toString(): String {
+        return "MessageHeader:$size:$dataSize:$type"
+    }
+
+    companion object {
+        private const val MESSAGE_TYPE_SIZE = 4
+    }
 }

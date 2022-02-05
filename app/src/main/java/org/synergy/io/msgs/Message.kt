@@ -61,7 +61,7 @@ abstract class Message {
      */
     constructor(type: MessageType) {
         this.type = type
-        header = MessageHeader(this.type)
+        header = MessageHeader(type)
         data = ByteArrayOutputStream()
         dataStream = MessageDataOutputStream(data)
     }
