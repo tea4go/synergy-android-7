@@ -37,9 +37,9 @@ interface ScreenInterface {
 
     fun leave(): Boolean
 
-    fun keyDown(keyEventID: Int, mask: Int, button: Int)
+    fun keyDown(id: Int, mask: Int, button: Int)
 
-    fun keyUp(keyEventID: Int, mask: Int, button: Int)
+    fun keyUp(id: Int, mask: Int, button: Int)
 
     fun keyRepeat(keyEventID: Int, mask: Int, button: Int)
 
