@@ -17,24 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.net;
+package org.synergy.net
 
-public class TCPListenSocket extends ListenSocketInterface {
-
-    public DataSocketInterface accept() {
-        return null;
+class TCPListenSocket : ListenSocketInterface() {
+    override fun accept(): DataSocketInterface? {
+        return null
     }
 
-    public void bind(final NetworkAddress address) {
+    override fun bind(address: NetworkAddress) {}
 
+    override fun close() {}
+
+    override fun getEventTarget(): Any {
+        return this
     }
-
-    public void close() {
-
-    }
-
-    public Object getEventTarget() {
-        return this;
-    }
-
 }
