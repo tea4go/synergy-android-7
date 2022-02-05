@@ -17,12 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base.exceptions;
+package org.synergy.base.exceptions
 
-public class InvalidMessageException extends Exception {
-    private static final long serialVersionUID = 189730760889457948L;
-
-    public InvalidMessageException(String message) {
-        super(message);
-    }
-}
+class InvalidMessageException(message: String? = null) : Exception(message)
