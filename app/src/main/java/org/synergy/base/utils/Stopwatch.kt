@@ -27,95 +27,72 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
 */
+package org.synergy.base.utils
 
+class Stopwatch(private var triggered: Boolean) {
+    private var mark = 0.0
 
-package org.synergy.base.utils;
+    var isStopped: Boolean
+        private set
 
+    private val clock: Double
+        get() = System.currentTimeMillis().toDouble() / 1000.0
 
-
-public class Stopwatch {
-	
-	private double mark;
-	private boolean triggered;
-	private boolean stopped;
-	
-	public Stopwatch (boolean triggered) {
-	    this.mark = 0.0;
-        this.triggered = triggered;
-        this.stopped = triggered;
-
-        if (!this.triggered) {
-            mark = getClock ();
-        }
-
-	}
-
-    private double getClock () {
-        return (double) System.currentTimeMillis () / 1000.0;
-    }
-
-
-    public double reset () {
-        if (this.stopped) {
-            final double dt = this.mark;
-            this.mark = 0.0;
-            return dt;
-        } else {
-            final double t = getClock ();
-            final double dt = t - this.mark;
-            this.mark = dt;
-            return dt;
+    init {
+        isStopped = triggered
+        if (!triggered) {
+            mark = clock
         }
     }
 
-    public void stop () {
-        if (this.stopped) {
-            return;
+    fun reset() = if (isStopped) {
+        val dt = mark
+        mark = 0.0
+        dt
+    } else {
+        val t = clock
+        val dt = t - mark
+        mark = dt
+        dt
+    }
+
+    fun stop() {
+        if (isStopped) {
+            return
         }
 
         // save the elapsed time
-        this.mark = getClock () - this.mark;
-        this.stopped = true;
+        mark = clock - mark
+        isStopped = true
     }
 
-    public void start () {
-        this.triggered = false;
-        if (!this.stopped) {
-            return;
+    fun start() {
+        triggered = false
+        if (!isStopped) {
+            return
         }
 
         // set the mark such that it reports the time elapsed at stop ()
-        this.mark = getClock () - this.mark;
-        this.stopped = false;
+        mark = clock - mark
+        isStopped = false
     }
 
-    public void setTrigger () {
-        stop ();
-        this.triggered = true;
+    fun setTrigger() {
+        stop()
+        triggered = true
     }
 
-    public double getTime () {
-        if (this.triggered) {
-            final double dt = this.mark;
-            start ();
-            return dt;
-        } else if (this.stopped) {
-            return this.mark;
-        } else {
-            return getClock () - this.mark;
+    val time: Double
+        get() = when {
+            triggered -> {
+                val dt = mark
+                start()
+                dt
+            }
+            isStopped -> mark
+            else -> clock - mark
         }
-    }
 
-    public double getTimeNoStart () {
-        if (this.stopped) {
-            return this.mark;
-        } else {
-            return getClock () - this.mark;
-        }
-    }
-
-
-	public boolean isStopped () {
-        return this.stopped;
-    }
+    val timeNoStart: Double
+        get() = (if (isStopped) mark else clock - mark)
 }
