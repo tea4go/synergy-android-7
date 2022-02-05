@@ -17,19 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base.utils;
+package org.synergy.base.utils
 
-import org.synergy.base.utils.Log;
+interface LogOutputterInterface {
+    fun open(title: String)
 
-public interface LogOutputterInterface {
+    fun close()
 
-    public void open (final String title);
+    fun show(showIfEmpty: Boolean)
 
-    public void close ();
+    fun write(level: Log.Level, tag: String, message: String): Boolean
 
-    public void show (final boolean showIfEmpty);
-
-    public boolean write (Log.Level level, final String tag, final String message);
-
-    public void flush ();
+    fun flush()
 }
