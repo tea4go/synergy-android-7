@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base;
+package org.synergy.base
 
 /*
  * @author Shaun Patterson
@@ -27,41 +27,30 @@ package org.synergy.base;
  * This class holds an event, a data id, and the type of
  *  event
  */
-public class EventData {
-
-    public enum Type {
+class EventData {
+    enum class Type {
         NONE,
         SYSTEM,
         USER
     }
 
-    private Type type;
-    private Event event;
-    private Integer dataID;
+    var type: Type
+        private set
+    var event: Event?
+        private set
+    var dataID: Int
+        private set
 
     // None
-    public EventData() {
-        this.type = Type.NONE;
-        this.dataID = -1;
-        this.event = null;
+    constructor() {
+        type = Type.NONE
+        dataID = -1
+        event = null
     }
 
-    public EventData(Type type, Event event, Integer dataID) {
-        this.type = type;
-        this.event = event;
-        this.dataID = dataID;
+    constructor(type: Type, event: Event?, dataID: Int) {
+        this.type = type
+        this.event = event
+        this.dataID = dataID
     }
-
-    public Type getType() {
-        return type;
-    }
-
-    public Integer getDataID() {
-        return dataID;
-    }
-
-    public Event getEvent() {
-        return event;
-    }
-
 }
