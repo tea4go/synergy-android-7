@@ -17,164 +17,126 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base;
+package org.synergy.base
 
-import org.synergy.base.utils.Log;
+import android.util.Log
+import org.synergy.base.Event.Companion.deleteData
+import org.synergy.base.utils.Log.Companion.debug
+import org.synergy.base.utils.Log.Companion.debug5
+import org.synergy.base.utils.Log.Companion.note
+import java.util.*
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-
-public class EventQueue implements EventQueueInterface {
-
+class EventQueue private constructor() : EventQueueInterface {
     // buffer of events
-    EventQueueBuffer buffer;
+    private var buffer: EventQueueBuffer? = SimpleEventQueueBuffer()
 
     // saved events
-    private Map<Integer, Event> events;
-    private LinkedList<Integer> oldEventIDs;
+    private val events: MutableMap<Int, Event> = mutableMapOf()
+    private val oldEventIDs: LinkedList<Int> = LinkedList()
 
     // event handlers
-    private Map<Object, Map<EventType, EventJobInterface>> handlers;
+    private val handlers: MutableMap<Any, MutableMap<EventType, EventJobInterface>> = mutableMapOf()
 
+    override val isEmpty: Boolean
+        get() = buffer?.isEmpty == true && nextTimerTimeout != 0.0
+    private val nextTimerTimeout: Double
+        get() = 0.0
 
-    private static Object sync = new Object();
-    private static EventQueue eventQueue;
-
-    public static EventQueue getInstance() {
-        synchronized (sync) {
-            if (eventQueue == null) {
-                eventQueue = new EventQueue();
-            }
-            return eventQueue;
-        }
-    }
-
-    private EventQueue() {
-        this.buffer = new SimpleEventQueueBuffer();
-
-        new HashMap<Integer, String>();
-        this.events = new HashMap<>();
-        this.oldEventIDs = new LinkedList<>();
-
-        this.handlers = new HashMap<>();
-    }
-
-    private static void interrupt() {
-        // TODO: Todo?
-    }
-
-    public synchronized void adoptBuffer(EventQueueBuffer eventQueueBuffer) {
+    @Synchronized
+    override fun adoptBuffer(eventQueueBuffer: EventQueueBuffer?) {
         // discard old buffer and old events
-        events.clear();
-        oldEventIDs.clear();
+        events.clear()
+        oldEventIDs.clear()
 
         // use new buffer
-        buffer = eventQueueBuffer;
+        buffer = eventQueueBuffer
         if (buffer == null) {
-            buffer = new SimpleEventQueueBuffer();
+            buffer = SimpleEventQueueBuffer()
         }
     }
 
     /**
      * Get an event from the event queue
-     * <p>
+     *
+     *
      * TODO: The SimpleEventQueueBuffer has not been tested... and is rarely used
      * in the client
      *
      * @event Event to get
      * @timeout milliseconds to wait, < 0.0 is infinite
      */
-    public Event getEvent(final double timeout)
-            throws InvalidMessageException {
-        EventData eventData;
-
-        try {
+    @Throws(InvalidMessageException::class)
+    override fun getEvent(timeout: Double): Event? {
+        val buffer = buffer ?: return null
+        val eventData = try {
             if (timeout < 0.0) {
                 // Infinite timeout, retry forever
-                eventData = buffer.getEvent();
+                buffer.getEvent()
             } else {
-                eventData = buffer.getEvent(timeout);
+                buffer.getEvent(timeout)
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return null;
+        } catch (e: InterruptedException) {
+            Log.e(TAG, "getEvent: ", e)
+            return null
         }
-
-        switch (eventData.getType()) {
-            case NONE:
-                if (timeout < 0.0) {
-                    // Client is not expecting a NONE type.
-                    // Just try again
-                    return getEvent(timeout);
-                } else {
-                    return null;
-                }
-            case SYSTEM:
-                return eventData.getEvent();
-            case USER:
-                return removeEvent(eventData.getDataID());
-            default:
-                throw new InvalidMessageException("Invalid message type: " + eventData.getType());
+        return when (eventData?.type) {
+            EventData.Type.NONE -> if (timeout < 0.0) {
+                // Client is not expecting a NONE type.
+                // Just try again
+                getEvent(timeout)
+            } else null
+            EventData.Type.SYSTEM -> eventData.event
+            EventData.Type.USER -> removeEvent(eventData.dataID)
+            else -> throw InvalidMessageException("Invalid message type: " + eventData?.type)
         }
     }
 
     /**
      * Dispatch an event
      */
-    public boolean dispatchEvent(final Event event) {
-
-        Log.note("dispatching: " + event.toString());
-
-        Object target = event.getTarget();
-
-        EventJobInterface job = getHandler(event.getType(), target);
+    override fun dispatchEvent(event: Event): Boolean {
+        note("dispatching: $event")
+        val target = event.target ?: return false
+        val job = getHandler(event.type, target)
         if (job == null) {
-            Log.debug("job is null for Event: " + event);
-            job = getHandler(EventType.UNKNOWN, target);
-        } else {
-            Log.debug("running job");
-            job.run(event);
+            debug("job is null for Event: $event")
+            return false
         }
-
-        return false;
+        debug("running job")
+        job.run(event)
+        return true
     }
 
     /**
      * Add an event to the queue
      */
-    public void addEvent(final Event event) {
-        Log.debug5("addEvent");
-
-        // discard bogus Integers
-        switch (event.getType()) {
-            case UNKNOWN:
-            case SYSTEM:
-            case TIMER:
-                Log.debug("Bogus event discarded");
-                return;
-            default:
-                break;
+    override fun addEvent(event: Event) {
+        debug5("addEvent")
+        when (event.type) {
+            EventType.UNKNOWN, EventType.SYSTEM, EventType.TIMER -> {
+                debug("Bogus event discarded")
+                return
+            }
+            else -> {}
         }
-
-        if (event.getFlags().equals(Event.Flags.DELIVER_IMMEDIATELY)) {
-            dispatchEvent(event);
+        if (event.flags == Event.Flags.DELIVER_IMMEDIATELY) {
+            dispatchEvent(event)
 
             // TODO: Questionable
-            Event.deleteData(event);
+            deleteData(event)
         } else {
             // store the event's data locally
-            Integer eventID = saveEvent(event);
+            val eventID = saveEvent(event)
 
             // add it
             try {
-                buffer.addEvent(eventID);
-            } catch (InterruptedException e) {
+                buffer?.addEvent(eventID)
+            } catch (e: InterruptedException) {
                 // failed to send event
                 // TODO Log error?
-                removeEvent(eventID);
+                removeEvent(eventID)
                 // TODO Questionable
-                Event.deleteData(event);
+                deleteData(event)
             }
         }
     }
@@ -182,86 +144,77 @@ public class EventQueue implements EventQueueInterface {
     /**
      * Link an event to an EventJobInterface
      */
-    public synchronized void adoptHandler(EventType type, Object target, EventJobInterface handler) {
+    @Synchronized
+    fun adoptHandler(type: EventType, target: Any, handler: EventJobInterface) {
         // set/replace current handler
-        Map<EventType, EventJobInterface> handlerMap = handlers.get(target);
-
+        var handlerMap = handlers[target]
         if (handlerMap == null) {
             // First handler for this event type
-            handlerMap = new HashMap<>();
-            handlers.put(target, handlerMap);
+            handlerMap = EnumMap(EventType::class.java)
+            handlers[target] = handlerMap
         }
-        handlers.get(target).put(type, handler);
-
+        handlers[target]?.set(type, handler)
     }
 
     /**
      * Remove a handler for a particular event
      */
-    public synchronized void removeHandler(EventType type, Object target) {
-        if (handlers.containsKey(target)) {
-            handlers.get(target).remove(type);
-        }
+    @Synchronized
+    fun removeHandler(type: EventType, target: Any) {
+        handlers[target]?.remove(type)
     }
 
     /**
      * Remove all handlers for a target
      */
-    public void removeHandlers(Object target) {
-        handlers.remove(target);
+    fun removeHandlers(target: Any) {
+        handlers.remove(target)
     }
 
+    fun getHandler(type: EventType, target: Any) = handlers[target]?.get(type)
 
-    public EventJobInterface getHandler(EventType type, Object target) {
-        if (handlers.containsKey(target)) {
-            if (handlers.get(target).containsKey(type)) {
-                return handlers.get(target).get(type);
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
-    }
-
-
-    private synchronized Integer saveEvent(final Event event) {
-        Log.debug("Old EventIDs Size: " + oldEventIDs.size());
+    @Synchronized
+    private fun saveEvent(event: Event): Int {
+        debug("Old EventIDs Size: " + oldEventIDs.size)
 
         // choose id
-        Integer id;
-        if (!oldEventIDs.isEmpty()) {
+        val id = if (!oldEventIDs.isEmpty()) {
             // reuse an old id
-            id = oldEventIDs.remove(oldEventIDs.size() - 1);
+            oldEventIDs.removeAt(oldEventIDs.size - 1)
         } else {
-            id = events.size();
+            events.size
         }
 
         // save data
-        Log.debug("Saving event data: " + id);
-        events.put(id, event);
-
-        return id;
+        debug("Saving event data: $id")
+        events[id] = event
+        return id
     }
 
-    private synchronized Event removeEvent(Integer eventID) {
-        Event removedEvent = events.remove(eventID);
-
-        if (removedEvent == null) {
-            return new Event();
+    @Synchronized
+    private fun removeEvent(eventID: Int): Event {
+        val removedEvent = events.remove(eventID)
+        return if (removedEvent == null) {
+            Event()
         } else {
             // push the old id for reuse
-            oldEventIDs.addLast(eventID);
-
-            return removedEvent;
+            oldEventIDs.addLast(eventID)
+            removedEvent
         }
     }
 
-    public boolean isEmpty() {
-        return (buffer.isEmpty() && getNextTimerTimeout() != 0.0);
-    }
+    companion object {
+        private val TAG = EventQueue::class.simpleName
 
-    private double getNextTimerTimeout() {
-        return 0.0;
+        @Volatile
+        private var instance: EventQueue? = null
+
+        fun getInstance(): EventQueue = instance ?: synchronized(this) {
+            EventQueue().also { instance = it }
+        }
+
+        private fun interrupt() {
+            // TODO: Todo?
+        }
     }
 }

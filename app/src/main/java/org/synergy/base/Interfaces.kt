@@ -29,9 +29,9 @@ interface EventQueueInterface {
     @Throws(InvalidMessageException::class)
     fun getEvent(timeout: Double): Event?
 
-    fun dispatchEvent(event: Event?): Boolean
+    fun dispatchEvent(event: Event): Boolean
 
-    fun addEvent(event: Event?)
+    fun addEvent(event: Event)
 
     val isEmpty: Boolean
 }

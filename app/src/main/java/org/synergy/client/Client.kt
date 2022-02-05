@@ -223,7 +223,7 @@ class Client(
         // TODO
     }
 
-    override val eventTarget: Any?
+    override val eventTarget: Any
         get() = screen.getEventTarget()
 
     private fun handleShapeChanged() {

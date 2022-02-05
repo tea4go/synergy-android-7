@@ -113,7 +113,9 @@ class Log private constructor() {
         private var instance: Log? = null
 
         @JvmStatic
-        fun getInstance() = instance ?: synchronized(this) { Log() }
+        fun getInstance() = instance ?: synchronized(this) {
+            Log().also { instance = it }
+        }
 
         @JvmStatic
         fun print(message: String) {

@@ -23,7 +23,7 @@ import android.graphics.Point
 import android.graphics.Rect
 
 interface ScreenInterface {
-    fun getEventTarget(): Any?
+    fun getEventTarget(): Any
 
     fun getShape(): Rect
 
