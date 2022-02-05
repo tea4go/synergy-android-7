@@ -22,14 +22,12 @@ package org.synergy.io.msgs
 import java.io.DataInputStream
 
 class EnterMessage(header: MessageHeader, din: DataInputStream) : Message(header) {
-    val x: Short = din.readShort()
-    val y: Short = din.readShort()
-    val sequenceNumber: Int = din.readInt()
-    val mask: Short = din.readShort()
+    val x = din.readShort()
+    val y = din.readShort()
+    val sequenceNumber = din.readInt()
+    val mask = din.readShort()
 
-    override fun toString(): String {
-        return "EnterMessage:($x,$y):$sequenceNumber:$mask"
-    }
+    override fun toString() = "EnterMessage:($x,$y):$sequenceNumber:$mask"
 
     companion object {
         val MESSAGE_TYPE = MessageType.CENTER

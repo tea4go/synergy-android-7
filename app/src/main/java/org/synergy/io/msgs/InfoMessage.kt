@@ -29,12 +29,12 @@ class InfoMessage(
     cursorX: Int,
     cursorY: Int,
 ) : Message(MESSAGE_TYPE) {
-    var screenX: Short = screenX.toShort()
-    var screenY: Short = screenY.toShort()
-    var screenWidth: Short = screenWidth.toShort()
-    var screenHeight: Short = screenHeight.toShort()
-    var cursorX: Short = cursorX.toShort()
-    var cursorY: Short = cursorY.toShort()
+    var screenX = screenX.toShort()
+    var screenY = screenY.toShort()
+    var screenWidth = screenWidth.toShort()
+    var screenHeight = screenHeight.toShort()
+    var cursorX = cursorX.toShort()
+    var cursorY = cursorY.toShort()
 
     // TODO: I haven't figured out what this is used for yet
     var unknown: Short = 0
@@ -50,9 +50,8 @@ class InfoMessage(
         writeShort(cursorY.toInt())
     }
 
-    override fun toString(): String {
-        return "InfoMessage:$screenX:$screenY:$screenWidth:$screenHeight:$unknown:$cursorX:$cursorY"
-    }
+    override fun toString() =
+        "InfoMessage:$screenX:$screenY:$screenWidth:$screenHeight:$unknown:$cursorX:$cursorY"
 
     companion object {
         private val MESSAGE_TYPE = MessageType.DINFO

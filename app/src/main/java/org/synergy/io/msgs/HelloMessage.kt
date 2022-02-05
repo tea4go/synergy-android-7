@@ -59,9 +59,7 @@ class HelloMessage : Message {
         }
     }
 
-    override fun toString(): String {
-        return "HelloMessage:$majorVersion:$minorVersion"
-    }
+    override fun toString() = "HelloMessage:$majorVersion:$minorVersion"
 
     companion object {
         private const val HELLO_MESSAGE_SIZE = 11

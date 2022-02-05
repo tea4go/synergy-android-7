@@ -34,9 +34,7 @@ class ClipboardDataMessage(header: MessageHeader, din: DataInputStream) : Messag
         data = mdin.readString()
     }
 
-    override fun toString(): String {
-        return "ClipboardDataMessage:$id:$sequenceNumber:$data"
-    }
+    override fun toString() = "ClipboardDataMessage:$id:$sequenceNumber:$data"
 
     companion object {
         val MESSAGE_TYPE = MessageType.DCLIPBOARD

@@ -22,13 +22,11 @@ package org.synergy.io.msgs
 import java.io.DataInputStream
 
 class KeyDownMessage(din: DataInputStream) : Message() {
-    val id: Int = din.readUnsignedShort()
-    val mask: Int = din.readUnsignedShort()
-    val button: Int = din.readUnsignedShort()
+    val id = din.readUnsignedShort()
+    val mask = din.readUnsignedShort()
+    val button = din.readUnsignedShort()
 
-    override fun toString(): String {
-        return "$MESSAGE_TYPE:$id:$mask:$button"
-    }
+    override fun toString() = "$MESSAGE_TYPE:$id:$mask:$button"
 
     companion object {
         val MESSAGE_TYPE = MessageType.DKEYDOWN

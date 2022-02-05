@@ -22,9 +22,9 @@ package org.synergy.io.msgs
 import java.io.DataInputStream
 
 class KeyUpMessage(din: DataInputStream) : Message() {
-    val id: Int = din.readUnsignedShort()
-    val mask: Int = din.readUnsignedShort()
-    val button: Int = din.readUnsignedShort()
+    val id = din.readUnsignedShort()
+    val mask = din.readUnsignedShort()
+    val button = din.readUnsignedShort()
 
     override fun toString() = "$MESSAGE_TYPE:$id:$mask:$button"
 

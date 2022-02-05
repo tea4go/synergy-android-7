@@ -22,9 +22,7 @@ package org.synergy.io.msgs
 import java.io.DataInputStream
 
 class ClipboardMessage(din: DataInputStream) : Message() {
-    override fun toString(): String {
-        return "ClipboardMessage: TODO"
-    }
+    override fun toString() = "ClipboardMessage: TODO"
 
     companion object {
         val MESSAGE_TYPE = MessageType.DCLIPBOARD

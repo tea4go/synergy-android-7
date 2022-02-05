@@ -26,9 +26,7 @@ class KeepAliveMessage : EmptyMessage {
 
     constructor() : super(MESSAGE_TYPE)
 
-    override fun toString(): String {
-        return "KeepAliveMessage"
-    }
+    override fun toString() = "KeepAliveMessage"
 
     companion object {
         private val MESSAGE_TYPE = MessageType.CKEEPALIVE

@@ -22,10 +22,10 @@ package org.synergy.io.msgs
 import java.io.DataInputStream
 
 class KeyRepeatMessage(din: DataInputStream) : Message() {
-    private val id: Short = din.readShort()
-    private val mask: Short = din.readShort()
-    private val count: Short = din.readShort()
-    private val button: Short = din.readShort()
+    private val id = din.readShort()
+    private val mask = din.readShort()
+    private val count = din.readShort()
+    private val button = din.readShort()
 
     fun getId() = id.toInt()
 
@@ -35,9 +35,7 @@ class KeyRepeatMessage(din: DataInputStream) : Message() {
 
     fun getButton() = button.toInt()
 
-    override fun toString(): String {
-        return "$MESSAGE_TYPE:$id:$mask:$button"
-    }
+    override fun toString() = "$MESSAGE_TYPE:$id:$mask:$button"
 
     companion object {
         val MESSAGE_TYPE = MessageType.DKEYDOWN

@@ -22,13 +22,11 @@ package org.synergy.io.msgs
 import java.io.DataInputStream
 
 class MouseDownMessage(din: DataInputStream) : Message() {
-    private val buttonId: Byte = din.readByte()
+    private val buttonId = din.readByte()
 
     fun getButtonId() = buttonId.toInt()
 
-    override fun toString(): String {
-        return "MouseDownMessage:$buttonId"
-    }
+    override fun toString() = "MouseDownMessage:$buttonId"
 
     companion object {
         val MESSAGE_TYPE = MessageType.DMOUSEDOWN
