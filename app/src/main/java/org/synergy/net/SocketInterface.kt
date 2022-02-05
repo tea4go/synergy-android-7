@@ -17,16 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.net;
+package org.synergy.net
 
+interface SocketInterface {
+    fun bind(address: NetworkAddress)
 
-public interface SocketInterface {
+    fun close()
 
-    public void bind(final NetworkAddress address);
-
-    public void close();
-
-    public Object getEventTarget();
-
-
+    fun getEventTarget(): Any
 }

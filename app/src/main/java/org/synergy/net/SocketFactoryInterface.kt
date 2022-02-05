@@ -17,11 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.net;
+package org.synergy.net
 
-public interface SocketFactoryInterface {
+interface SocketFactoryInterface {
+    fun create(): DataSocketInterface
 
-    public DataSocketInterface create();
-
-    public ListenSocketInterface createListen();
+    fun createListen(): ListenSocketInterface
 }

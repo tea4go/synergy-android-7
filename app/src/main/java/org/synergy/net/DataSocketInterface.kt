@@ -17,16 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.net;
+package org.synergy.net
 
-import java.io.IOException;
+import org.synergy.io.Stream
+import org.synergy.net.SocketInterface
+import kotlin.Throws
+import org.synergy.net.NetworkAddress
+import java.io.IOException
 
-import org.synergy.io.Stream;
+interface DataSocketInterface : Stream, SocketInterface {
+    @Throws(IOException::class)
+    fun connect(address: NetworkAddress)
 
-public interface DataSocketInterface extends Stream, SocketInterface {
-
-    public abstract void connect(NetworkAddress address) throws IOException;
-
-    public abstract boolean isReady();
-
+    override fun isReady(): Boolean
 }
