@@ -226,9 +226,8 @@ class Client(
         // TODO
     }
 
-    override fun getEventTarget(): Any {
-        return screen.eventTarget
-    }
+    override val eventTarget: Any?
+        get() = screen.eventTarget
 
     private fun handleShapeChanged() {
         Log.debug("resolution changed")

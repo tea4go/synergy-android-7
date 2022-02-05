@@ -141,7 +141,7 @@ class BarrierClientService : Service() {
     private fun startEventQueue() {
         val eventQueue = EventQueue.getInstance()
         var event = eventQueue.getEvent(-1.0)
-        while (event.type != EventType.QUIT) {
+        while (event?.type != EventType.QUIT) {
             eventQueue.dispatchEvent(event)
             // TODO event.deleteData ();
             event = eventQueue.getEvent(-1.0)

@@ -17,21 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base.interfaces;
+package org.synergy.base.interfaces
 
-import org.synergy.base.Event;
-import org.synergy.base.InvalidMessageException;
-import org.synergy.base.interfaces.EventQueueBuffer;
+import org.synergy.base.Event
+import org.synergy.base.InvalidMessageException
+import org.synergy.base.interfaces.EventQueueBuffer
+import kotlin.Throws
 
-public interface EventQueueInterface {
+interface EventQueueInterface {
+    fun adoptBuffer(eventQueueBuffer: EventQueueBuffer?)
 
-    public void adoptBuffer(EventQueueBuffer eventQueueBuffer);
+    @Throws(InvalidMessageException::class)
+    fun getEvent(timeout: Double): Event?
 
-    public Event getEvent(final double timeout) throws InvalidMessageException;
+    fun dispatchEvent(event: Event?): Boolean
 
-    public boolean dispatchEvent(final Event event);
+    fun addEvent(event: Event?)
 
-    public void addEvent(final Event event);
-
-    public boolean isEmpty();
+    val isEmpty: Boolean
 }

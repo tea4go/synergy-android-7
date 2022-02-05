@@ -17,24 +17,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base.interfaces;
+package org.synergy.base.interfaces
 
-import org.synergy.base.EventData;
+import kotlin.Throws
+import org.synergy.base.EventData
 
-public interface EventQueueBuffer {
-
+interface EventQueueBuffer {
     // get an event, wait for a period of time
-    public EventData getEvent(double timeout) throws InterruptedException;
+    @Throws(InterruptedException::class)
+    fun getEvent(timeout: Double): EventData?
 
     // No timeout
-    public EventData getEvent() throws InterruptedException;
+    @get:Throws(InterruptedException::class)
+    val event: EventData?
 
-    public void addEvent(Integer dataID) throws InterruptedException;
-
-    public boolean isEmpty();
+    @Throws(InterruptedException::class)
+    fun addEvent(dataID: Int?)
 
     //public EventQueueTimer newTimer (double duration, boolean oneShot);
 
-    //public void deleteTimer (EventQueueTimer timer);
+    val isEmpty: Boolean
 
+    // public void deleteTimer (EventQueueTimer timer);
 }

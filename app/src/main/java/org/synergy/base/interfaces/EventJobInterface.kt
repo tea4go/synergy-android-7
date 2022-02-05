@@ -17,12 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base.interfaces;
+package org.synergy.base.interfaces
 
-import org.synergy.base.Event;
+import org.synergy.base.Event
 
-public interface EventJobInterface {
-
-    public void run(final Event event);
-
+fun interface EventJobInterface {
+    fun run(event: Event?)
 }

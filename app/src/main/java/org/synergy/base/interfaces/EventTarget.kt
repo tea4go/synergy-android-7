@@ -17,10 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base.interfaces;
+package org.synergy.base.interfaces
 
-public interface EventTarget {
-
-    public Object getEventTarget();
-
+interface EventTarget {
+    val eventTarget: Any?
 }
