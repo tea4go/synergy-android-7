@@ -22,6 +22,8 @@ package org.synergy.common.screens
 import android.content.Context
 import android.graphics.Point
 import android.graphics.Rect
+import android.view.KeyEvent.ACTION_DOWN
+import android.view.KeyEvent.ACTION_UP
 import android.view.ViewConfiguration
 import android.view.ViewConfiguration.getTapTimeout
 import org.synergy.base.utils.Log
@@ -42,6 +44,7 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     private val dragPoints = mutableListOf<Point>()
     private var dragStartTime: Long = 0
     private var dragEndTime: Long = 0
+    private val downKeys = mutableMapOf<Int, Long>()
 
     // Screen dimensions
     private var width = 0
@@ -82,12 +85,39 @@ class BasicScreen(private val context: Context) : ScreenInterface {
 
     override fun keyDown(id: Int, mask: Int, button: Int) {
         Log.debug("keyDown: id: $id, mask: $mask, button: $button")
-        context.sendBroadcast(KeyDown(BarrierKeyEvent(id, mask, button)).getIntent())
+        val date = Date()
+        downKeys[id] = date.time
+        context.sendBroadcast(
+            KeyEvent(
+                BarrierKeyEvent(
+                    downTime = date.time,
+                    eventTime = date.time,
+                    action = ACTION_DOWN,
+                    id = id,
+                    mask = mask,
+                    scanCode = button,
+                )
+            ).getIntent()
+        )
     }
 
     override fun keyUp(id: Int, mask: Int, button: Int) {
         Log.debug("keyUp: id: $id, mask: $mask, button: $button")
-        context.sendBroadcast(KeyUp(BarrierKeyEvent(id, mask, button)).getIntent())
+        val downTime = downKeys[id] ?: 0
+        downKeys.remove(id)
+        val date = Date()
+        context.sendBroadcast(
+            KeyEvent(
+                BarrierKeyEvent(
+                    downTime = downTime,
+                    eventTime = date.time,
+                    action = ACTION_UP,
+                    id = id,
+                    mask = mask,
+                    scanCode = button,
+                )
+            ).getIntent()
+        )
     }
 
     override fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {}
@@ -195,6 +225,7 @@ class BasicScreen(private val context: Context) : ScreenInterface {
         dragPoints.clear()
         dragStartTime = 0
         dragEndTime = 0
+        downKeys.clear()
     }
 
     override fun getCursorPos(): Point {

@@ -1,11 +1,9 @@
 package org.synergy.utils
 
 import android.os.Bundle
-import android.view.KeyEvent.KEYCODE_DEL
-import android.view.KeyEvent.KEYCODE_FORWARD_DEL
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.*
-import org.synergy.common.key.BarrierKeyEvent
+import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.PREVIOUS
 
 
 object AccessibilityNodeInfoUtils {
@@ -88,26 +86,13 @@ object AccessibilityNodeInfoUtils {
         return startIndex == textEnd && endIndex == textEnd || selected
     }
 
-    fun handleNonCharKey(
-        node: AccessibilityNodeInfoCompat,
-        keyEvent: BarrierKeyEvent,
-    ) {
-        if (keyEvent.isGlobalAction || !keyEvent.isNonChar) {
-            return
-        }
-        when (keyEvent.keyCode) {
-            KEYCODE_DEL -> deleteText(node)
-            KEYCODE_FORWARD_DEL -> deleteText(node, true)
-        }
-    }
-
     /**
      * Deletes text in the given [AccessibilityNodeInfoCompat].
      *
      * @param node The [AccessibilityNodeInfoCompat] containing the text to delete
      * @return `true` if the deletion is successful
      */
-    private fun deleteText(
+    fun deleteText(
         node: AccessibilityNodeInfoCompat,
         isForwardDelete: Boolean = false,
     ): Boolean {
@@ -150,5 +135,27 @@ object AccessibilityNodeInfoUtils {
         val endOfText = text.length
         val newCursorPosition = deleteSectionLowerIndex.coerceAtMost(endOfText)
         return selectText(node, newCursorPosition, newCursorPosition)
+    }
+
+    enum class MoveDirection {
+        PREVIOUS,
+        NEXT,
+    }
+
+    fun moveCursor(
+        node: AccessibilityNodeInfoCompat,
+        granularity: Int,
+        direction: MoveDirection,
+    ): Boolean {
+        val args = Bundle().apply {
+            putInt(ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT, granularity)
+            putBoolean(ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN, false)
+        }
+        val action = if (direction == PREVIOUS) {
+            ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY
+        } else {
+            ACTION_NEXT_AT_MOVEMENT_GRANULARITY
+        }
+        return node.performAction(action, args)
     }
 }

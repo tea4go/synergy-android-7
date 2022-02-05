@@ -3,6 +3,7 @@ package org.synergy.services
 import android.content.Intent
 import android.graphics.Point
 import org.synergy.common.key.BarrierKeyEvent
+import android.view.KeyEvent as AndroidKeyEvent
 
 sealed class BarrierAccessibilityAction(val intentAction: String) {
     abstract fun getIntent(): Intent
@@ -101,38 +102,21 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
         }
     }
 
-    data class KeyDown(val keyEvent: BarrierKeyEvent) : BarrierAccessibilityAction(KEY_DOWN_ACTION) {
+    data class KeyEvent(val keyEvent: BarrierKeyEvent?) :
+        BarrierAccessibilityAction(KEY_EVENT_ACTION) {
         override fun getIntent(): Intent = Intent().apply {
             action = intentAction
-            putExtra("id", keyEvent.id)
-            putExtra("mask", keyEvent.mask)
-            putExtra("scanCode", keyEvent.scanCode)
+            putExtra("event", keyEvent)
         }
 
         companion object {
-            fun parseIntent(intent: Intent): KeyDown = intent.run {
-                val id = getIntExtra("id", -1)
-                val mask = getIntExtra("mask", -1)
-                val scanCode = getIntExtra("scanCode", -1)
-                return KeyDown(BarrierKeyEvent(id, mask, scanCode))
-            }
-        }
-    }
-
-    data class KeyUp(val keyEvent: BarrierKeyEvent) : BarrierAccessibilityAction(KEY_UP_ACTION) {
-        override fun getIntent(): Intent = Intent().apply {
-            action = intentAction
-            putExtra("id", keyEvent.id)
-            putExtra("mask", keyEvent.mask)
-            putExtra("scanCode", keyEvent.scanCode)
-        }
-
-        companion object {
-            fun parseIntent(intent: Intent): KeyUp = intent.run {
-                val id = getIntExtra("id", -1)
-                val mask = getIntExtra("mask", -1)
-                val scanCode = getIntExtra("scanCode", -1)
-                return KeyUp(BarrierKeyEvent(id, mask, scanCode))
+            fun parseIntent(intent: Intent): KeyEvent = intent.run {
+                val keyEvent: AndroidKeyEvent? = getParcelableExtra("event")
+                if (keyEvent == null) {
+                    KeyEvent(null)
+                } else {
+                    KeyEvent(BarrierKeyEvent(keyEvent))
+                }
             }
         }
     }
@@ -144,8 +128,7 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
         private const val MOUSE_CLICK_ACTION = "mouse_click"
         private const val MOUSE_LONG_CLICK_ACTION = "mouse_long_click"
         private const val DRAG_ACTION = "drag"
-        private const val KEY_DOWN_ACTION = "key_down"
-        private const val KEY_UP_ACTION = "key_up"
+        private const val KEY_EVENT_ACTION = "key_event"
 
         private val actionMap = mapOf(
             MOUSE_ENTER_ACTION to MouseEnter,
@@ -154,8 +137,7 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
             MOUSE_CLICK_ACTION to MouseClick,
             MOUSE_LONG_CLICK_ACTION to MouseLongClick,
             DRAG_ACTION to Drag,
-            KEY_DOWN_ACTION to KeyDown,
-            KEY_UP_ACTION to KeyUp,
+            KEY_EVENT_ACTION to KeyEvent,
         )
 
         fun getAllActions() = actionMap.keys
@@ -167,8 +149,7 @@ sealed class BarrierAccessibilityAction(val intentAction: String) {
             MouseClick -> MouseClick.parseIntent(intent)
             MouseLongClick -> MouseLongClick.parseIntent(intent)
             Drag -> Drag.parseIntent(intent)
-            KeyDown -> KeyDown.parseIntent(intent)
-            KeyUp -> KeyUp.parseIntent(intent)
+            KeyEvent -> KeyEvent.parseIntent(intent)
             else -> null
         }
     }

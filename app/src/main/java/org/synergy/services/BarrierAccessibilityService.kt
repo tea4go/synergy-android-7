@@ -10,19 +10,26 @@ import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.os.Build
+import android.util.Log
 import android.view.Gravity
-import android.view.KeyEvent.KEYCODE_ESCAPE
+import android.view.KeyEvent.*
 import android.view.View
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
-import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_INPUT
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.*
 import org.synergy.R
 import org.synergy.common.key.BarrierKeyEvent
+import org.synergy.common.key.MODIFIER_KEY_GLOBAL_ACTION_MAP
+import org.synergy.common.key.ONE_KEY_GLOBAL_ACTION_MAP
+import org.synergy.common.key.ONE_KEY_TEXT_NODE_ACTION_MAP
 import org.synergy.services.BarrierAccessibilityAction.*
-import org.synergy.utils.AccessibilityNodeInfoUtils.handleNonCharKey
+import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.NEXT
+import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.PREVIOUS
+import org.synergy.utils.AccessibilityNodeInfoUtils.deleteText
 import org.synergy.utils.AccessibilityNodeInfoUtils.insertText
+import org.synergy.utils.AccessibilityNodeInfoUtils.moveCursor
 import org.synergy.utils.GestureUtils.click
 import org.synergy.utils.GestureUtils.longClick
 import org.synergy.utils.GestureUtils.path
@@ -33,8 +40,10 @@ class BarrierAccessibilityService : AccessibilityService() {
     private lateinit var cursorLayout: LayoutParams
     private lateinit var windowManager: WindowManager
 
+    private var skipModifiersOnKeyUp: Boolean = false
+
     private val root: AccessibilityNodeInfoCompat
-        get() = AccessibilityNodeInfoCompat.wrap(rootInActiveWindow)
+        get() = wrap(rootInActiveWindow)
 
     private var focusedInputNode: AccessibilityNodeInfoCompat? = null
 
@@ -104,8 +113,7 @@ class BarrierAccessibilityService : AccessibilityService() {
             is MouseClick -> mouseClick(action.x, action.y)
             is MouseLongClick -> mouseLongClick(action.x, action.y)
             is Drag -> drag(action.dragPoints, action.duration)
-            is KeyDown -> keyDown(action.keyEvent)
-            is KeyUp -> keyUp(action.keyEvent)
+            is KeyEvent -> keyEvent(action.keyEvent)
         }
     }
 
@@ -169,47 +177,116 @@ class BarrierAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun keyDown(keyEvent: BarrierKeyEvent) {
-        if (keyEvent.isUnknown) {
+    private fun keyEvent(keyEvent: BarrierKeyEvent?) {
+        Log.d(TAG, "keyEvent: $keyEvent")
+        if (keyEvent == null || !keyEvent.hasValidKeyCode) {
             return
         }
-        if (keyEvent.isModifier) {
-            // modifier keys are handled on key up
-            return
+        when (keyEvent.action) {
+            ACTION_DOWN -> keyDown(keyEvent)
+            ACTION_UP -> keyUp(keyEvent)
+            else -> return
         }
-        if (keyEvent.isGlobalAction) {
-            handleGlobalActionKey(keyEvent)
-            return
-        }
-        focusedInputNode?.run {
-            if (!isFocused || !isEditable) {
-                return
-            }
-            if (keyEvent.isCharacter) {
-                insertText(this, keyEvent.id.toChar().toString())
-                refresh()
-                return
-            }
-            handleNonCharKey(this, keyEvent)
-        }
+        // if (keyEvent.isModifier) {
+        //     // modifier keys are handled on key up
+        //     return
+        // }
+        // if (keyEvent.isGlobalAction) {
+        //     handleGlobalActionKey(keyEvent)
+        //     return
+        // }
     }
 
-    private fun handleGlobalActionKey(keyEvent: BarrierKeyEvent) {
-        if (!keyEvent.isGlobalAction) {
+    private fun keyDown(keyEvent: BarrierKeyEvent) {
+        // Log.d(TAG, "keyDown: hasNoModifiers: ${keyEvent.hasNoModifiers}, ${keyEvent.unicodeChar.toChar()}")
+        val handled = handleKeyDownEvent(keyEvent)
+        if (!handled) {
             return
         }
-        when(keyEvent.keyCode) {
-            KEYCODE_ESCAPE -> performGlobalAction(GLOBAL_ACTION_BACK)
+        // if key event was handled and had modifier, skip handling the modifier on key up
+        if (keyEvent.hasModifiers) {
+            skipModifiersOnKeyUp = true
         }
+        // getComboAction(keyEvent)
+        // if (keyEvent.isCharacter) {
+        //     Log.d(TAG, "keyEvent: character: ${keyEvent.unicodeChar.toChar()}")
+        // }
+    }
+
+    private fun handleKeyDownEvent(keyEvent: BarrierKeyEvent): Boolean {
+        var handled = handleCharKeyEvent(keyEvent)
+        if (handled) {
+            return true
+        }
+        handled = handleOneKeyActionEvent(keyEvent)
+        if (handled) {
+            return true
+        }
+        return false
     }
 
     private fun keyUp(keyEvent: BarrierKeyEvent) {
-        if (keyEvent.isUnknown) {
+        // handle modifier keys
+        if (!BarrierKeyEvent.isModifierKey(keyEvent.keyCode)) {
             return
         }
-        if (keyEvent.isModifier) {
-
+        if (skipModifiersOnKeyUp) {
+            // since we support at most 2-key combos, we will have only 1 modifier key pressed
+            skipModifiersOnKeyUp = false
+            return
         }
+        val action = MODIFIER_KEY_GLOBAL_ACTION_MAP[keyEvent.keyCode] ?: return
+        performGlobalAction(action)
+    }
+
+    private fun handleCharKeyEvent(keyEvent: BarrierKeyEvent): Boolean {
+        // if a modifier is pressed which is not the shift key, don't handle the event here
+        if (keyEvent.hasModifiers && !keyEvent.isShiftPressed || !keyEvent.isCharacter) {
+            return false
+        }
+        val node = focusedInputNode ?: return false
+        if (!node.isFocused || !node.isEditable) {
+            return false
+        }
+        val inserted = insertText(node, keyEvent.unicodeChar.toChar().toString())
+        node.refresh()
+        return inserted
+    }
+
+    private fun handleOneKeyActionEvent(keyEvent: BarrierKeyEvent): Boolean {
+        if (keyEvent.hasModifiers) {
+            return false
+        }
+        if (ONE_KEY_GLOBAL_ACTION_MAP.containsKey(keyEvent.keyCode)) {
+            return handleGlobalActionEvent(keyEvent)
+        }
+        if (ONE_KEY_TEXT_NODE_ACTION_MAP.containsKey(keyEvent.keyCode)) {
+            return handleTextNodeActionEvent(keyEvent)
+        }
+        return false
+    }
+
+    private fun handleGlobalActionEvent(keyEvent: BarrierKeyEvent): Boolean {
+        val action = ONE_KEY_GLOBAL_ACTION_MAP[keyEvent.keyCode] ?: return false
+        return performGlobalAction(action)
+    }
+
+    private fun handleTextNodeActionEvent(keyEvent: BarrierKeyEvent): Boolean {
+        if (!ONE_KEY_TEXT_NODE_ACTION_MAP.containsKey(keyEvent.keyCode)) {
+            return false
+        }
+        val node = focusedInputNode ?: return false
+        val performed = when (keyEvent.keyCode) {
+            KEYCODE_DEL -> deleteText(node)
+            KEYCODE_FORWARD_DEL -> deleteText(node, true)
+            KEYCODE_MOVE_HOME -> moveCursor(node, MOVEMENT_GRANULARITY_LINE, PREVIOUS)
+            KEYCODE_MOVE_END -> moveCursor(node, MOVEMENT_GRANULARITY_LINE, NEXT)
+            KEYCODE_DPAD_LEFT -> moveCursor(node, MOVEMENT_GRANULARITY_CHARACTER, PREVIOUS)
+            KEYCODE_DPAD_RIGHT -> moveCursor(node, MOVEMENT_GRANULARITY_CHARACTER, NEXT)
+            else -> false
+        }
+        node.refresh()
+        return performed
     }
 
     companion object {
