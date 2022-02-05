@@ -102,23 +102,23 @@ class Client(
     private fun setupConnecting() = stream?.run {
         EventQueue.getInstance().adoptHandler(
             EventType.SOCKET_CONNECTED,
-            eventTarget,
+            getEventTarget(),
         ) { handleConnected() }
         // val job = EventQueue.getInstance().getHandler(EventType.SOCKET_CONNECTED, it.eventTarget)
         EventQueue.getInstance().adoptHandler(
             EventType.SOCKET_CONNECT_FAILED,
-            eventTarget,
+            getEventTarget(),
         ) { handleConnectionFailed() }
     }
 
     private fun cleanupConnecting() = stream?.run {
         EventQueue.getInstance().removeHandler(
             EventType.SOCKET_CONNECTED,
-            eventTarget,
+            getEventTarget(),
         )
         EventQueue.getInstance().removeHandler(
             EventType.SOCKET_CONNECT_FAILED,
-            eventTarget,
+            getEventTarget(),
         )
     }
 
@@ -147,14 +147,14 @@ class Client(
         Log.debug("handling hello")
         try {
             // Read in the Hello Message
-            val din = DataInputStream(inputStream)
+            val din = DataInputStream(getInputStream())
             val helloMessage = HelloMessage(din)
             Log.debug1("Read hello message: $helloMessage")
 
             // TODO check versions
 
             // say hello back
-            val out = DataOutputStream(outputStream)
+            val out = DataOutputStream(getOutputStream())
 
             // Grab the hostname
             HelloBackMessage(1, 3, name).write(out)
@@ -164,12 +164,12 @@ class Client(
             // make sure we process any remaining messages later. we won't
             //  receive another event for already pending messages so we fake
             //  one
-            if (isReady) {
+            if (isReady()) {
                 // TODO, So far this event does nothing -- I think
                 EventQueue.getInstance().addEvent(
                     Event(
                         EventType.STREAM_INPUT_READY,
-                        eventTarget
+                        getEventTarget()
                     )
                 )
             }
@@ -181,23 +181,23 @@ class Client(
     private fun setupConnection() = stream?.run {
         EventQueue.getInstance().adoptHandler(
             EventType.SOCKET_DISCONNECTED,
-            eventTarget
+            getEventTarget()
         ) { handleDisconnected() }
         EventQueue.getInstance().adoptHandler(
             EventType.STREAM_INPUT_READY,
-            eventTarget
+            getEventTarget()
         ) { handleHello() }
         EventQueue.getInstance().adoptHandler(
             EventType.STREAM_OUTPUT_ERROR,
-            eventTarget
+            getEventTarget()
         ) { handleDisconnected() }
         EventQueue.getInstance().adoptHandler(
             EventType.STREAM_INPUT_SHUTDOWN,
-            eventTarget
+            getEventTarget()
         ) { handleDisconnected() }
         EventQueue.getInstance().adoptHandler(
             EventType.STREAM_OUTPUT_SHUTDOWN,
-            eventTarget
+            getEventTarget()
         ) { handleDisconnected() }
     }
 

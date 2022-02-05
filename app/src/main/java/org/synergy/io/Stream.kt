@@ -17,21 +17,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io;
+package org.synergy.io
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import kotlin.Throws
 
-public interface Stream {
+interface Stream {
+    fun close()
 
-    public void close();
+    fun isReady(): Boolean
 
-    public boolean isReady();
+    fun getEventTarget(): Any
 
-    public Object getEventTarget();
+    @Throws(IOException::class)
+    fun getInputStream(): InputStream
 
-    public InputStream getInputStream() throws IOException;
-
-    public OutputStream getOutputStream() throws IOException;
+    @Throws(IOException::class)
+    fun getOutputStream(): OutputStream
 }
