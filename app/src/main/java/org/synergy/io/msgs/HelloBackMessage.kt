@@ -17,30 +17,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.IOException;
+import java.io.IOException
 
-public class HelloBackMessage extends Message {
-    private static final MessageType MESSAGE_TYPE = MessageType.HELLOBACK;
-
+class HelloBackMessage(
     // Protocol version and screen name
-    private int majorVersion;
-    private int minorVersion;
-    private String name;
+    private val majorVersion: Int,
+    private val minorVersion: Int,
+    private val name: String,
+) : Message(MESSAGE_TYPE) {
 
-    public HelloBackMessage (int majorVersion, int minorVersion, String name) {
-        super (MESSAGE_TYPE);
-
-        this.majorVersion = majorVersion;
-        this.minorVersion = minorVersion;
-        this.name = name;
+    @Throws(IOException::class)
+    override fun writeData() = dataStream.run {
+        writeShort(majorVersion)
+        writeShort(minorVersion)
+        writeString(name)
     }
 
-    @Override
-    protected final void writeData () throws IOException {
-        dataStream.writeShort (majorVersion);
-        dataStream.writeShort (minorVersion);
-        dataStream.writeString (name);
+    companion object {
+        private val MESSAGE_TYPE = MessageType.HELLOBACK
     }
 }

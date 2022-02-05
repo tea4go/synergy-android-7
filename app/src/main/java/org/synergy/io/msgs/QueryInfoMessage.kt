@@ -17,18 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
+import java.io.DataInputStream
 
-public class QueryInfoMessage extends EmptyMessage {
-    public static final MessageType MESSAGE_TYPE = MessageType.QINFO;
+class QueryInfoMessage : EmptyMessage {
+    constructor(din: DataInputStream) : super()
 
-    public QueryInfoMessage (DataInputStream din) {
-        super ();
-    }
+    constructor() : super(MESSAGE_TYPE)
 
-    public QueryInfoMessage () {
-        super (MESSAGE_TYPE);
+    companion object {
+        val MESSAGE_TYPE = MessageType.QINFO
     }
 }

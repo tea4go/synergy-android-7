@@ -17,22 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-public class EmptyMessage extends Message {
+open class EmptyMessage : Message {
+    constructor() : super()
 
-	public EmptyMessage () {
-		super ();
-	}
-	
-	public EmptyMessage (MessageHeader header) {
-		super (header);
-	}
-	public EmptyMessage (MessageType type) {
-		super (type);
-	}
-	
-	protected final void writeData () {
-		// Do nothing. 
-	}
+    constructor(header: MessageHeader) : super(header)
+
+    constructor(type: MessageType) : super(type)
+
+    override fun writeData() {
+        // Do nothing. 
+    }
 }

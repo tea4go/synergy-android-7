@@ -4,11 +4,11 @@
  * Copyright (C) 2010 The Synergy Project
  * Copyright (C) 2009 The Synergy+ Project
  * Copyright (C) 2002 Chris Schoeneman
- * 
+ *
  * This package is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * found in the file COPYING that should have accompanied this file.
- * 
+ *
  * This package is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -17,69 +17,53 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import android.util.Log;
-
-import java.io.DataInputStream;
-import java.io.IOException;
-
-import org.synergy.io.MessageDataInputStream;
+import android.util.Log
+import org.synergy.io.MessageDataInputStream
+import java.io.DataInputStream
+import java.io.IOException
 
 /**
-  * This message does not have a header
-  */
-public class HelloMessage extends Message {
-	
-    private static final int HELLO_MESSAGE_SIZE = 11;
+ * This message does not have a header
+ */
+class HelloMessage : Message {
+    var majorVersion = 0
+        private set
+    var minorVersion = 0
+        private set
 
-    private int majorVersion;
-    private int minorVersion;
+    constructor(majorVersion: Int, minorVersion: Int) {
+        // This message does not have a standard header
+        this.majorVersion = majorVersion
+        this.minorVersion = minorVersion
+    }
 
-	public HelloMessage (int majorVersion, int minorVersion) {
-		// This message does not have a standard header
-		this.majorVersion = majorVersion;
-        this.minorVersion = minorVersion;
-	}
-
-    public HelloMessage (DataInputStream din) throws InvalidMessageException {
+    constructor(din: DataInputStream) {
         try {
-        	MessageDataInputStream mdin = new MessageDataInputStream(din);
+            val mdin = MessageDataInputStream(din)
+            val packetSize = mdin.readInt()
+            if (packetSize != HELLO_MESSAGE_SIZE) {
+                throw InvalidMessageException("Hello message not the right size: $packetSize")
+            }
 
-	        int packetSize = mdin.readInt ();
-	
-	        if (packetSize != HELLO_MESSAGE_SIZE) {
-	            throw new InvalidMessageException ("Hello message not the right size: " + packetSize);
-	        }
+            // Read in "Synergy" string
+            mdin.readExpectedString("Barrier")
 
-        	// Read in "Synergy" string
-        	mdin.readExpectedString("Barrier");
-        	
-        	// Read in the major and minor protocol versions
-        	majorVersion = mdin.readShort ();
-        	minorVersion = mdin.readShort ();
-        } catch (IOException e) {
-			Log.d("Barrier", "wrong hello message: "+e.getMessage());
-
-			throw new InvalidMessageException (e.getMessage());
+            // Read in the major and minor protocol versions
+            majorVersion = mdin.readShort().toInt()
+            minorVersion = mdin.readShort().toInt()
+        } catch (e: IOException) {
+            Log.d("Barrier", "wrong hello message: " + e.message)
+            throw InvalidMessageException(e.message)
         }
     }
-    
-    /*@Override
-	public void write(DataOutputStream dout) throws IOException {
-		// TODO Auto-generated method stub
-    	// Not needed for client
-	}*/
 
-	public int getMajorVersion() {
-		return majorVersion;
-	}
+    override fun toString(): String {
+        return "HelloMessage:$majorVersion:$minorVersion"
+    }
 
-	public int getMinorVersion() {
-		return minorVersion;
-	}
-	
-	public String toString () {
-		return "HelloMessage:" + majorVersion + ":"  + minorVersion;
-	}
+    companion object {
+        private const val HELLO_MESSAGE_SIZE = 11
+    }
 }

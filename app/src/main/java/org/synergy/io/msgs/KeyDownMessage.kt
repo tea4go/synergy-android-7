@@ -17,38 +17,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
 
-public class KeyDownMessage extends Message {
-	public static final MessageType MESSAGE_TYPE = MessageType.DKEYDOWN;
-	
-	private int id;
-	private int mask;
-	private int button;
-	
-	public KeyDownMessage (DataInputStream din) throws IOException {
-		id = din.readUnsignedShort ();
-		mask = din.readUnsignedShort ();
-		button = din.readUnsignedShort ();
-	}
-	
-	public int getID () {
-		return id;
-	}
-	
-	public int getMask () {
-		return mask;
-	}
-	
-	public int getButton () {
-		return button;
-	}
-	
+class KeyDownMessage(din: DataInputStream) : Message() {
+    val id: Int = din.readUnsignedShort()
+    val mask: Int = din.readUnsignedShort()
+    val button: Int = din.readUnsignedShort()
 
-	public String toString () {
-		return MESSAGE_TYPE + ":" + id + ":" + mask + ":" + button;
-	}
+    override fun toString(): String {
+        return "$MESSAGE_TYPE:$id:$mask:$button"
+    }
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.DKEYDOWN
+    }
 }

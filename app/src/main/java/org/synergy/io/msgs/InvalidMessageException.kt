@@ -17,15 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import android.util.Log;
-
-public class InvalidMessageException extends Exception {
-	private static final long serialVersionUID = 1889503614899371915L;
-
-	public InvalidMessageException (String message) {
-		super (message);
-	}
-	
-}
+class InvalidMessageException(message: String?) : Exception(message)

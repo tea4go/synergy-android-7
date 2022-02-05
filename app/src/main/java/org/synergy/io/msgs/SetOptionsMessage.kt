@@ -17,33 +17,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
+import java.io.IOException
 
-import java.util.ArrayList;
+class SetOptionsMessage(header: MessageHeader, din: DataInputStream) : Message() {
 
-public class SetOptionsMessage extends Message {
-	public static final MessageType MESSAGE_TYPE = MessageType.DSETOPTIONS;
-
-
-    public SetOptionsMessage (MessageHeader header, DataInputStream din) throws IOException { 
-        ArrayList <Integer> options = new ArrayList <Integer> ();
+    init {
+        val options = ArrayList<Int>()
 
         // Read off a list of integers until all the data defined in the header has been read
-        int dataLeft = header.getDataSize ();
+        var dataLeft = header.dataSize
         while (dataLeft > 0) {
-            options.add (Integer.valueOf (din.readInt ()));
-
-            dataLeft -= INT_SIZE;
+            options.add(Integer.valueOf(din.readInt()))
+            dataLeft -= INT_SIZE
         }
         if (dataLeft != 0) {
-            throw new IOException ("Error reading SetOptionsMessage. dataLeft: " + dataLeft);
+            throw IOException("Error reading SetOptionsMessage. dataLeft: $dataLeft")
         }
     }
 
-    public String toString () {
-        return "SetOptionsMessage:";
+    override fun toString() = "SetOptionsMessage:"
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.DSETOPTIONS
     }
 }

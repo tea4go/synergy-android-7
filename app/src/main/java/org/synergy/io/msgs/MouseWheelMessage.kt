@@ -17,32 +17,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
 
-public class MouseWheelMessage {
-	public static final MessageType MESSAGE_TYPE = MessageType.DMOUSEWHEEL;
-	
-	private short xDelta;
-	private short yDelta;
-	
-	public MouseWheelMessage (DataInputStream din) throws IOException {
-		xDelta = din.readShort();
-		yDelta = din.readShort();
-	}
-	
-	public int getXDelta() {
-		return xDelta;
-	}
-	
-	public int getYDelta() {
-		return yDelta;
-	}
-	
-	public String toString () {
-		return "MouseWheelMessage:(" + xDelta + "," + yDelta + ")";
-	}
+class MouseWheelMessage(din: DataInputStream) {
+    private val xDelta = din.readShort()
+    private val yDelta = din.readShort()
 
+    fun getXDelta() = xDelta.toInt()
+
+    fun getYDelta() = yDelta.toInt()
+
+    override fun toString() = "MouseWheelMessage:($xDelta,$yDelta)"
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.DMOUSEWHEEL
+    }
 }

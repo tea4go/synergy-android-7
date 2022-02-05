@@ -17,18 +17,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import org.synergy.io.MessageDataInputStream
+import java.io.DataInputStream
 
-public class ClipboardMessage extends Message {
-	public static final MessageType MESSAGE_TYPE = MessageType.DCLIPBOARD;
-	
-	public ClipboardMessage (DataInputStream din) throws IOException {
-	}
-	
-	public String toString () {
-		return "ClipboardMessage: TODO";
-	}
+class ClipboardDataMessage(header: MessageHeader, din: DataInputStream) : Message(header) {
+    private val id: Byte
+    private val sequenceNumber: Int
+    private val data: String
+
+    init {
+        val mdin = MessageDataInputStream(din)
+        id = mdin.readByte()
+        sequenceNumber = mdin.readInt()
+        data = mdin.readString()
+    }
+
+    override fun toString(): String {
+        return "ClipboardDataMessage:$id:$sequenceNumber:$data"
+    }
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.DCLIPBOARD
+    }
 }

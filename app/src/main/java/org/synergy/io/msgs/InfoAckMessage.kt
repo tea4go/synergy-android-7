@@ -17,18 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
+import java.io.DataInputStream
 
-public class InfoAckMessage extends EmptyMessage {
-    public static final MessageType MESSAGE_TYPE = MessageType.CINFOACK;
+class InfoAckMessage : EmptyMessage {
+    constructor(din: DataInputStream) : super()
 
-    public InfoAckMessage (DataInputStream din) {
-        super ();
-    }
+    constructor() : super(MESSAGE_TYPE)
 
-    public InfoAckMessage () {
-        super (MESSAGE_TYPE);
+    companion object {
+        val MESSAGE_TYPE = MessageType.CINFOACK
     }
 }

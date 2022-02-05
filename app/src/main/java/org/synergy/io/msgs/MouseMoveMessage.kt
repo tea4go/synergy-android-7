@@ -17,33 +17,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
 
-public class MouseMoveMessage extends Message {
-	public static final MessageType MESSAGE_TYPE = MessageType.DMOUSEMOVE;
-	
-	private short x;
-	private short y;
-	
-	public MouseMoveMessage (DataInputStream din) throws IOException {
-		x = din.readShort ();
-		y = din.readShort ();
-	}
-	
-	public int getX () {
-		return (int) x;
-	}
-	
-	public int getY () {
-		return (int) y;
-	}
-	
-	
-	public String toString () {
-		return "MouseMoveMessage:(" + x + "," + y + ")";
-	}
-	
+class MouseMoveMessage(din: DataInputStream) : Message() {
+    private val x = din.readShort()
+    private val y = din.readShort()
+
+    fun getX() = x.toInt()
+
+    fun getY() = y.toInt()
+
+    override fun toString() = "MouseMoveMessage:($x,$y)"
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.DMOUSEMOVE
+    }
 }

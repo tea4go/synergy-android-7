@@ -375,7 +375,7 @@ public class ServerProxy {
         Log.debug1(keyUpMessage.toString());
 
         try {
-            client.keyUp(keyUpMessage.getID(), keyUpMessage.getMask(), keyUpMessage.getButton());
+            client.keyUp(keyUpMessage.getId(), keyUpMessage.getMask(), keyUpMessage.getButton());
         } catch (Exception e) {
         }
     }
@@ -383,7 +383,7 @@ public class ServerProxy {
     private void keyDown(KeyDownMessage keyDownMessage) {
         Log.info(keyDownMessage.toString());
 
-        client.keyDown(keyDownMessage.getID(), keyDownMessage.getMask(), keyDownMessage.getButton());
+        client.keyDown(keyDownMessage.getId(), keyDownMessage.getMask(), keyDownMessage.getButton());
 
     }
 
@@ -391,19 +391,19 @@ public class ServerProxy {
         Log.debug1(keyRepeatMessage.toString());
 
         try {
-            client.keyRepeat(keyRepeatMessage.getID(), keyRepeatMessage.getMask(), keyRepeatMessage.getButton());
+            client.keyRepeat(keyRepeatMessage.getId(), keyRepeatMessage.getMask(), keyRepeatMessage.getButton());
         } catch (Exception e) {
         }
     }
 
     private void mouseDown(MouseDownMessage mouseDownMessage) {
         Log.debug(mouseDownMessage.toString());
-        client.mouseDown(mouseDownMessage.getButtonID());
+        client.mouseDown(mouseDownMessage.getButtonId());
     }
 
     private void mouseUp(MouseUpMessage mouseUpMessage) {
         Log.debug(mouseUpMessage.toString());
-        client.mouseUp(mouseUpMessage.getButtonID());
+        client.mouseUp(mouseUpMessage.getButtonId());
     }
 
     private void mouseWheel(MouseWheelMessage mouseWheelMessage) {

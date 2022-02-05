@@ -17,18 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
+import java.io.DataInputStream
 
-public class NoOpMessage extends EmptyMessage {
-	private static final MessageType MESSAGE_TYPE = MessageType.CNOOP;
-	
-	public NoOpMessage (MessageHeader header, DataInputStream din) {
-		super (header);
-	}
-	
-	public NoOpMessage () {
-		super (MESSAGE_TYPE);
-	}
+class NoOpMessage : EmptyMessage {
+    constructor(header: MessageHeader, din: DataInputStream) : super(header)
+
+    constructor() : super(MESSAGE_TYPE)
+
+    companion object {
+        private val MESSAGE_TYPE = MessageType.CNOOP
+    }
 }

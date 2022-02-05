@@ -17,23 +17,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
+import java.io.DataInputStream
 
-public class KeepAliveMessage extends EmptyMessage {
-	private static final MessageType MESSAGE_TYPE = MessageType.CKEEPALIVE;
+class KeepAliveMessage : EmptyMessage {
+    constructor(header: MessageHeader, din: DataInputStream) : super(header)
 
-	public KeepAliveMessage (MessageHeader header, DataInputStream din) {
-		super (header);
-	}
-	
-	public KeepAliveMessage () {
-		super (MESSAGE_TYPE);
-	}
-	
-	public String toString () {
-		return "KeepAliveMessage";
-	}
-	
+    constructor() : super(MESSAGE_TYPE)
+
+    override fun toString(): String {
+        return "KeepAliveMessage"
+    }
+
+    companion object {
+        private val MESSAGE_TYPE = MessageType.CKEEPALIVE
+    }
 }

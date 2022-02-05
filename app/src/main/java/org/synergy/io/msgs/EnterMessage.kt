@@ -17,47 +17,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
 
-public class EnterMessage extends Message {
-	public static final MessageType MESSAGE_TYPE = MessageType.CENTER;
-	
-	private short x;
-	private short y;
-	private int sequenceNumber;
-	private short mask;
-	
-	public EnterMessage (MessageHeader header, DataInputStream din) throws IOException {
-		super (header);
-		
-		x = din.readShort ();
-		y = din.readShort ();
-		sequenceNumber = din.readInt ();
-		mask = din.readShort ();
-	}
-	
-	public short getX () {
-		return x;
-	}
+class EnterMessage(header: MessageHeader, din: DataInputStream) : Message(header) {
+    val x: Short = din.readShort()
+    val y: Short = din.readShort()
+    val sequenceNumber: Int = din.readInt()
+    val mask: Short = din.readShort()
 
-	public short getY () {
-		return y;
-	}
+    override fun toString(): String {
+        return "EnterMessage:($x,$y):$sequenceNumber:$mask"
+    }
 
-	public int getSequenceNumber () {
-		return sequenceNumber;
-	}
-
-	public short getMask () {
-		return mask;
-	}
-
-	public String toString () {
-		return "EnterMessage:(" + x + "," + y + "):" + sequenceNumber + ":" + mask;  
-	}
-	
-	
+    companion object {
+        val MESSAGE_TYPE = MessageType.CENTER
+    }
 }

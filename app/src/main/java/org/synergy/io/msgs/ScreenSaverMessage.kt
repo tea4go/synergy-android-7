@@ -17,18 +17,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
 
-public class ScreenSaverMessage {
-	public static final MessageType MESSAGE_TYPE = MessageType.DMOUSERELMOVE;
+class ScreenSaverMessage(din: DataInputStream, screenSaverOnFlag: Byte) {
 
-	public ScreenSaverMessage (DataInputStream din, byte screenSaverOnFlag) throws IOException {
-	}
-	
-	public String toString () {
-		return "ScreenSaverMessage: TODO";
-	}
+    override fun toString() = "ScreenSaverMessage: TODO"
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.DMOUSERELMOVE
+    }
 }

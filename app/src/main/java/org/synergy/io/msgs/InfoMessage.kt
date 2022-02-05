@@ -17,56 +17,44 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.IOException;
+import java.io.IOException
 
-public class InfoMessage extends Message {
-	private static final MessageType MESSAGE_TYPE = MessageType.DINFO;
+class InfoMessage(
+    screenX: Int,
+    screenY: Int,
+    screenWidth: Int,
+    screenHeight: Int,
+    cursorX: Int,
+    cursorY: Int,
+) : Message(MESSAGE_TYPE) {
+    var screenX: Short = screenX.toShort()
+    var screenY: Short = screenY.toShort()
+    var screenWidth: Short = screenWidth.toShort()
+    var screenHeight: Short = screenHeight.toShort()
+    var cursorX: Short = cursorX.toShort()
+    var cursorY: Short = cursorY.toShort()
 
-	short screenX;
-	short screenY;
-	short screenWidth;
-	short screenHeight;
-	short unknown; // TODO: I haven't figured out what this is used for yet
-	short cursorX;
-	short cursorY;
-	
+    // TODO: I haven't figured out what this is used for yet
+    var unknown: Short = 0
 
-    public InfoMessage (int screenX, int screenY, int screenWidth, int screenHeight,
-    					 int cursorX, int cursorY) {
-    	super (MESSAGE_TYPE);
-
-    	this.screenX = (short) screenX;
-    	this.screenY = (short) screenY;
-    	this.screenWidth = (short) screenWidth;
-    	this.screenHeight = (short) screenHeight;
-    	this.unknown = 0; // TODO: see above
-    	this.cursorX = (short) cursorX;
-    	this.cursorY = (short) cursorY;
+    @Throws(IOException::class)
+    override fun writeData() = dataStream.run {
+        writeShort(screenX.toInt())
+        writeShort(screenY.toInt())
+        writeShort(screenWidth.toInt())
+        writeShort(screenHeight.toInt())
+        writeShort(unknown.toInt())
+        writeShort(cursorX.toInt())
+        writeShort(cursorY.toInt())
     }
 
-    @Override
-    protected final void writeData () throws IOException {
-        dataStream.writeShort (screenX);
-        dataStream.writeShort (screenY);
-        dataStream.writeShort (screenWidth);
-        dataStream.writeShort (screenHeight);
-        dataStream.writeShort (unknown);
-        dataStream.writeShort (cursorX);
-        dataStream.writeShort (cursorY);
+    override fun toString(): String {
+        return "InfoMessage:$screenX:$screenY:$screenWidth:$screenHeight:$unknown:$cursorX:$cursorY"
     }
-    
-    @Override
-    public final String toString () {
-    	return "InfoMessage:" +
-                screenX + ":" + 
-                screenY + ":" + 
-                screenWidth + ":" + 
-                screenHeight + ":" + 
-                unknown + ":" + 
-                cursorX + ":" + 
-                cursorY;
-    	
+
+    companion object {
+        private val MESSAGE_TYPE = MessageType.DINFO
     }
 }

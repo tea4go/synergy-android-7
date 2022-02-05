@@ -17,27 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
 
-public class MouseUpMessage extends Message {
-    public static final MessageType MESSAGE_TYPE = MessageType.DMOUSEUP;
+class MouseUpMessage(din: DataInputStream) : Message() {
+    private var buttonId = din.readByte()
 
-    byte buttonID = 0;
+    fun getButtonId() = buttonId.toInt()
 
-    public MouseUpMessage (DataInputStream din) throws IOException {
-        super ();
-        buttonID = din.readByte ();
+    override fun toString() = "MouseUpMessage:$buttonId"
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.DMOUSEUP
     }
-
-    public int getButtonID () {
-        return (int) buttonID;
-    }
-
-    public String toString () {
-        return "MouseUpMessage:" + buttonID;
-    }
-
 }

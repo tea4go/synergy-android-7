@@ -17,19 +17,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
 
-public class LeaveMessage extends EmptyMessage {
-	public static final MessageType MESSAGE_TYPE = MessageType.CLEAVE;
-	
-	public LeaveMessage (DataInputStream din) throws IOException {
-		super ();
-	}
-	
-	public String toString () {
-		return "LeaveMessage";
-	}
+class LeaveMessage(din: DataInputStream) : EmptyMessage() {
+    override fun toString() = "LeaveMessage"
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.CLEAVE
+    }
 }

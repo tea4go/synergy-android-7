@@ -17,27 +17,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.DataInputStream
 
-public class MouseDownMessage extends Message {
-    public static final MessageType MESSAGE_TYPE = MessageType.DMOUSEDOWN;
+class MouseDownMessage(din: DataInputStream) : Message() {
+    private val buttonId: Byte = din.readByte()
 
-    byte buttonID = 0;
+    fun getButtonId() = buttonId.toInt()
 
-    public MouseDownMessage (DataInputStream din) throws IOException {
-        super ();
-        buttonID = din.readByte ();
+    override fun toString(): String {
+        return "MouseDownMessage:$buttonId"
     }
 
-    public int getButtonID () {
-        return (int) buttonID;
+    companion object {
+        val MESSAGE_TYPE = MessageType.DMOUSEDOWN
     }
-
-    public String toString () {
-        return "MouseDownMessage:" + buttonID;
-    }
-
 }

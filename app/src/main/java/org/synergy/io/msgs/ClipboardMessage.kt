@@ -17,20 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import java.io.DataInputStream;
+import java.io.DataInputStream
 
-public class CloseMessage extends EmptyMessage {
-	private static final MessageType MESSAGE_TYPE = MessageType.CCLOSE;
-	
-	public CloseMessage (MessageHeader header, DataInputStream din) {
-		super (header);
-	}
-	
-	public CloseMessage () {
-		super (MESSAGE_TYPE);
-	}
-	
-	
+class ClipboardMessage(din: DataInputStream) : Message() {
+    override fun toString(): String {
+        return "ClipboardMessage: TODO"
+    }
+
+    companion object {
+        val MESSAGE_TYPE = MessageType.DCLIPBOARD
+    }
 }

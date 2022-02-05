@@ -120,6 +120,6 @@ abstract class Message {
          */
         protected const val BYTE_SIZE = 1
         protected const val SHORT_SIZE = 2
-        protected const val INT_SIZE = 4
+        const val INT_SIZE = 4
     }
 }
