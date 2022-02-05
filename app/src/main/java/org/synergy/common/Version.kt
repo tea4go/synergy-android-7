@@ -17,15 +17,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.common;
+package org.synergy.common
 
-public abstract class Version {
-
-	public static final String APPLICATION = "Synergy";
-    public static final String COPYRIGHT = "Copyright (C) 2010 The Synergy Project";
-    public static final String CONTACT = "Synergy Developers, synergy@googlegroups.com";
-    public static final String WEBSITE = "http://synergy-foss.org";
-
-    public static final String VERSION = "0.02";
-    public static final String APP_VERSION = "Synergy " + VERSION;	
+object Version {
+    const val APPLICATION = "Synergy"
+    const val COPYRIGHT = "Copyright (C) 2010 The Synergy Project"
+    const val CONTACT = "Synergy Developers, synergy@googlegroups.com"
+    const val WEBSITE = "http://synergy-foss.org"
+    const val VERSION = "0.02"
+    const val APP_VERSION = "Synergy " + VERSION
 }
