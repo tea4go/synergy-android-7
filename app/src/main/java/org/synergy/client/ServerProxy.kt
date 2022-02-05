@@ -17,413 +17,294 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.client;
+package org.synergy.client
 
-import org.synergy.base.Event;
-import org.synergy.base.EventJobInterface;
-import org.synergy.base.EventQueue;
-import org.synergy.base.EventQueueTimer;
-import org.synergy.base.EventType;
-import org.synergy.base.utils.Log;
-import org.synergy.io.Stream;
-import org.synergy.io.msgs.ClipboardDataMessage;
-import org.synergy.io.msgs.ClipboardMessage;
-import org.synergy.io.msgs.EnterMessage;
-import org.synergy.io.msgs.InfoMessage;
-import org.synergy.io.msgs.KeepAliveMessage;
-import org.synergy.io.msgs.KeyDownMessage;
-import org.synergy.io.msgs.KeyRepeatMessage;
-import org.synergy.io.msgs.KeyUpMessage;
-import org.synergy.io.msgs.LeaveMessage;
-import org.synergy.io.msgs.MessageHeader;
-import org.synergy.io.msgs.MouseDownMessage;
-import org.synergy.io.msgs.MouseUpMessage;
-import org.synergy.io.msgs.MouseWheelMessage;
-import org.synergy.io.msgs.ResetOptionsMessage;
-import org.synergy.io.msgs.ScreenSaverMessage;
-import org.synergy.io.msgs.SetOptionsMessage;
+import android.util.Log
+import org.synergy.base.EventQueue
+import org.synergy.base.EventQueueTimer
+import org.synergy.base.EventType
+import org.synergy.base.utils.Log.Companion.debug
+import org.synergy.base.utils.Log.Companion.debug1
+import org.synergy.base.utils.Log.Companion.error
+import org.synergy.base.utils.Log.Companion.info
+import org.synergy.base.utils.Log.Companion.note
+import org.synergy.client.ServerProxy.Parser
+import org.synergy.io.Stream
+import org.synergy.io.msgs.*
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.IOException
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+class ServerProxy(private val client: Client, private val stream: Stream) {
+    private var seqNum = 0
+    private var parser: Parser = Parser { parseHandshakeMessage() }
+    private var keepAliveAlarm = 0.0
+    private var keepAliveAlarmTimer: EventQueueTimer? = null
+    private var din: DataInputStream? = null
+    private var dout: DataOutputStream? = null
 
-public class ServerProxy {
-    private static final double KEEP_ALIVE_UNTIL_DEATH = 3.0;
-    private static final double KEEP_ALIVE_RATE = 3.0;
+    // /**
+    //  * Handle messages after the handshake is complete
+    //  */
+    // var messageDataBuffer = ByteArray(256)
 
-    /**
-     * Enumeration and Interface for parsing function
-     */
-    private enum Result {
-        OKAY, UNKNOWN, DISCONNECT
-    }
-
-    // To define what should parse and process messages
-    private interface Parser {
-        public Result parse() throws IOException;
-    }
-
-    private Client client;
-    private Stream stream;
-
-    private Integer seqNum;
-
-    private Parser parser;
-
-    // TODO KeyModifierTable
-
-    private double keepAliveAlarm;
-    private EventQueueTimer keepAliveAlarmTimer;
-
-    private DataInputStream din;
-    private DataOutputStream dout;
-
-    public ServerProxy(Client client, Stream stream) {
-        this.client = client;
-        this.stream = stream;
-
-        this.seqNum = 0;
-
-        this.keepAliveAlarm = 0.0;
-        this.keepAliveAlarmTimer = null;
-
-        assert (client != null);
-        assert (stream != null);
-
-        // TODO Key modifier table
-
+    init {
         // handle data on stream
         EventQueue.getInstance().adoptHandler(
-                EventType.STREAM_INPUT_READY,
-                stream.getEventTarget(),
-                event -> handleData()
-        );
+            EventType.STREAM_INPUT_READY,
+            stream.getEventTarget()
+        ) { handleData() }
 
         // send heartbeat
-        setKeepAliveRate(KEEP_ALIVE_RATE);
-
-        parser = new Parser() {
-            public Result parse() throws IOException {
-                return parseHandshakeMessage();
-            }
-        };
-
-    }
-
-    protected enum EResult {
-        OKAY, UNKNOWN, DISCONNECT;
+        setKeepAliveRate(KEEP_ALIVE_RATE)
     }
 
     /**
      * Handle messages before handshake is complete
      */
-    protected Result parseHandshakeMessage() throws IOException {
+    @Throws(IOException::class)
+    private fun parseHandshakeMessage(): Result {
+        val din = din ?: throw RuntimeException("din is null")
         // Read the header
-        MessageHeader header = new MessageHeader(din);
-        Log.debug("Received Header: " + header);
-
-        switch (header.getType()) {
-            case QINFO:
-                //queryInfo (new QueryInfoMessage ());
-                queryInfo();
-                break;
-            case CINFOACK:
-                infoAcknowledgment();
-                break;
-            case DSETOPTIONS:
-                SetOptionsMessage setOptionsMessage = new SetOptionsMessage(header, din);
-
-                setOptions(setOptionsMessage);
+        val header = MessageHeader(din)
+        debug("Received Header: $header")
+        when (header.type) {
+            MessageType.QINFO ->                 //queryInfo (new QueryInfoMessage ());
+                queryInfo()
+            MessageType.CINFOACK -> infoAcknowledgment()
+            MessageType.DSETOPTIONS -> {
+                val setOptionsMessage = SetOptionsMessage(header, din)
+                setOptions(setOptionsMessage)
 
                 // handshake is complete
-                Log.debug("Handshake is complete");
-                parser = new Parser() {
-                    public Result parse() throws IOException {
-                        return parseMessage();
-                    }
-                };
-
-                client.handshakeComplete();
-                break;
-            case CRESETOPTIONS:
-                resetOptions(new ResetOptionsMessage(din));
-                break;
-            default:
-                return Result.UNKNOWN;
+                debug("Handshake is complete")
+                parser = Parser { parseMessage() }
+                client.handshakeComplete()
+            }
+            MessageType.CRESETOPTIONS -> resetOptions(ResetOptionsMessage(din))
+            else -> return Result.UNKNOWN
         }
+        return Result.OKAY
+    }
 
-        return Result.OKAY;
+    @Throws(IOException::class)
+    private fun parseMessage(): Result {
+        val din = din ?: throw RuntimeException("din is null")
+        // Read the header
+        val header = MessageHeader(din)
+        when (header.type) {
+            MessageType.DMOUSEMOVE -> {
+                // Cut right to the chase with mouse movements since
+                //  they are the most abundant
+                val ax = din.readShort()
+                val ay = din.readShort()
+                client.mouseMove(ax.toInt(), ay.toInt())
+            }
+            MessageType.DMOUSERELMOVE -> {
+                val rx = din.readShort()
+                val ry = din.readShort()
+                client.relMouseMove(rx.toInt(), ry.toInt())
+            }
+            MessageType.DMOUSEWHEEL -> mouseWheel(MouseWheelMessage(din))
+            MessageType.DKEYDOWN -> keyDown(KeyDownMessage(din))
+            MessageType.DKEYUP -> keyUp(KeyUpMessage(din))
+            MessageType.DKEYREPEAT -> keyRepeat(KeyRepeatMessage(din))
+            MessageType.DMOUSEDOWN -> mouseDown(MouseDownMessage(din))
+            MessageType.DMOUSEUP -> mouseUp(MouseUpMessage(din))
+            MessageType.CKEEPALIVE -> {
+                // echo keep alives and reset alarm
+                KeepAliveMessage().write(dout!!)
+                resetKeepAliveAlarm()
+            }
+            MessageType.CNOOP -> {}
+            MessageType.CENTER -> enter(EnterMessage(header, din))
+            MessageType.CLEAVE -> leave(LeaveMessage(din))
+            MessageType.CCLIPBOARD -> grabClipboard(ClipboardMessage(din))
+            MessageType.CSCREENSAVER -> {
+                val screenSaverOnFlag = din.readByte()
+                screensaver(ScreenSaverMessage(din, screenSaverOnFlag))
+            }
+            MessageType.QINFO -> queryInfo()
+            MessageType.CINFOACK ->                 //infoAcknowledgment (new InfoAckMessage (din));
+                infoAcknowledgment()
+            MessageType.DCLIPBOARD -> setClipboard(ClipboardDataMessage(header, din))
+            MessageType.CRESETOPTIONS -> resetOptions(ResetOptionsMessage(din))
+            MessageType.DSETOPTIONS -> {
+                val setOptionsMessage = SetOptionsMessage(header, din)
+                setOptions(setOptionsMessage)
+            }
+            MessageType.CCLOSE -> {
+                // server wants us to hangup
+                debug1("recv close")
+                // client.disconnect (null);
+                return Result.DISCONNECT
+            }
+            MessageType.EBAD -> {
+                error("server disconnected due to a protocol error")
+                // client.disconnect("server reported a protocol error");
+                return Result.DISCONNECT
+            }
+            else -> return Result.UNKNOWN
+        }
+        return Result.OKAY
+    }
+
+    private fun handleData() {
+        debug("handle data called")
+        try {
+            val din = DataInputStream(stream.getInputStream()).also { din = it }
+            // this.dout = new DataOutputStream (stream.getOutputStream ());
+            // this.oout = new ObjectOutputStream (stream.getOutputStream());
+            while (true) {
+                when (parser.parse()) {
+                    Result.OKAY -> {}
+                    Result.UNKNOWN -> {
+                        error("invalid message from server: " + din.readUTF())
+                        return
+                    }
+                    Result.DISCONNECT -> return
+                }
+            }
+        } catch (e: IOException) {
+            Log.e(TAG, "handleData: ", e)
+        }
+    }
+
+    private fun resetKeepAliveAlarm() {
+        if (keepAliveAlarmTimer != null) {
+            keepAliveAlarmTimer!!.cancel()
+            keepAliveAlarmTimer = null
+        }
+        if (keepAliveAlarm > 0.0) {
+            keepAliveAlarmTimer = EventQueueTimer(
+                keepAliveAlarm, true, this
+            ) { handleKeepAliveAlarm() }
+        }
+    }
+
+    @Suppress("SameParameterValue")
+    private fun setKeepAliveRate(rate: Double) {
+        keepAliveAlarm = rate * KEEP_ALIVE_UNTIL_DEATH
+        resetKeepAliveAlarm()
+    }
+
+    private fun handleKeepAliveAlarm() {
+        note("server is dead")
+        client.disconnect("server is not responding")
+    }
+
+    private fun queryInfo() {
+        val info = ClientInfo(client.shape, client.cursorPos)
+        sendInfo(info)
+    }
+
+    private fun sendInfo(info: ClientInfo) {
+        try {
+            val dout = DataOutputStream(stream.getOutputStream()).also { dout = it }
+            InfoMessage(
+                info.screenPosition.left,
+                info.screenPosition.top,
+                info.screenPosition.right,
+                info.screenPosition.bottom,
+                info.cursorPos.x,
+                info.cursorPos.y
+            ).write(dout)
+        } catch (e: Exception) {
+            Log.e(TAG, "sendInfo: ", e)
+        }
+    }
+
+    private fun infoAcknowledgment() {
+        debug("recv info acknowledgment")
+    }
+
+    fun onInfoChanged() {
+        // send info update
+        queryInfo()
+    }
+
+    private fun enter(enterMessage: EnterMessage) {
+        debug1("Screen entered: $enterMessage")
+        seqNum = enterMessage.sequenceNumber
+        client.enter(enterMessage)
+    }
+
+    private fun leave(leaveMessage: LeaveMessage) {
+        debug1("Screen left: $leaveMessage")
+        client.leave(leaveMessage)
+    }
+
+    private fun keyUp(keyUpMessage: KeyUpMessage) {
+        debug1(keyUpMessage.toString())
+        try {
+            client.keyUp(keyUpMessage.id, keyUpMessage.mask, keyUpMessage.button)
+        } catch (e: Exception) {
+        }
+    }
+
+    private fun keyDown(keyDownMessage: KeyDownMessage) {
+        info(keyDownMessage.toString())
+        client.keyDown(keyDownMessage.id, keyDownMessage.mask, keyDownMessage.button)
+    }
+
+    private fun keyRepeat(keyRepeatMessage: KeyRepeatMessage) {
+        debug1(keyRepeatMessage.toString())
+        try {
+            client.keyRepeat(
+                keyRepeatMessage.getId(),
+                keyRepeatMessage.getMask(),
+                keyRepeatMessage.getButton()
+            )
+        } catch (e: Exception) {
+        }
+    }
+
+    private fun mouseDown(mouseDownMessage: MouseDownMessage) {
+        debug(mouseDownMessage.toString())
+        client.mouseDown(mouseDownMessage.getButtonId())
+    }
+
+    private fun mouseUp(mouseUpMessage: MouseUpMessage) {
+        debug(mouseUpMessage.toString())
+        client.mouseUp(mouseUpMessage.getButtonId())
+    }
+
+    private fun mouseWheel(mouseWheelMessage: MouseWheelMessage) {
+        client.mouseWheel(mouseWheelMessage.getXDelta(), mouseWheelMessage.getYDelta())
+    }
+
+    private fun resetOptions(resetOptionsMessage: ResetOptionsMessage) {}
+
+    private fun setOptions(setOptionsMessage: SetOptionsMessage) {}
+
+    private fun screensaver(screenSaverMessage: ScreenSaverMessage) {}
+
+    private fun grabClipboard(clipboardMessage: ClipboardMessage) {}
+
+    private fun setClipboard(clipboardDataMessage: ClipboardDataMessage) {
+        debug1("Setting clipboard: $clipboardDataMessage")
     }
 
     /**
-     * Handle messages after the handshake is complete
+     * Enumeration and Interface for parsing function
      */
-    byte[] messageDataBuffer = new byte[256];
-
-    protected Result parseMessage() throws IOException {
-        // Read the header
-        MessageHeader header = new MessageHeader(din);
-
-        // NOTE: as this is currently designed an improperly consumed message
-        // will break the handling of the next message,  The message data should
-        // be fully read into a buffer and that buffer passed into the message
-        // for handling...
-
-        switch (header.getType()) {
-            case DMOUSEMOVE:
-                // Cut right to the chase with mouse movements since
-                //  they are the most abundant
-                short ax = din.readShort();
-                short ay = din.readShort();
-                client.mouseMove(ax, ay);
-                break;
-
-            case DMOUSERELMOVE:
-                short rx = din.readShort();
-                short ry = din.readShort();
-                client.relMouseMove(rx, ry);
-                break;
-
-            case DMOUSEWHEEL:
-                mouseWheel(new MouseWheelMessage(din));
-                break;
-
-            case DKEYDOWN:
-                keyDown(new KeyDownMessage(din));
-                break;
-
-            case DKEYUP:
-                keyUp(new KeyUpMessage(din));
-                break;
-
-            case DKEYREPEAT:
-                keyRepeat(new KeyRepeatMessage(din));
-                break;
-
-            case DMOUSEDOWN:
-                mouseDown(new MouseDownMessage(din));
-                break;
-
-            case DMOUSEUP:
-                mouseUp(new MouseUpMessage(din));
-                break;
-
-            case CKEEPALIVE:
-                // echo keep alives and reset alarm
-                new KeepAliveMessage().write(dout);
-                resetKeepAliveAlarm();
-                break;
-
-            case CNOOP:
-                // accept and discard no-op
-                break;
-
-            case CENTER:
-                enter(new EnterMessage(header, din));
-                break;
-
-            case CLEAVE:
-                leave(new LeaveMessage(din));
-                break;
-
-            case CCLIPBOARD:
-                grabClipboard(new ClipboardMessage(din));
-                break;
-
-            case CSCREENSAVER:
-                byte screenSaverOnFlag = din.readByte();
-                screensaver(new ScreenSaverMessage(din, screenSaverOnFlag));
-                break;
-
-            case QINFO:
-                queryInfo();
-                break;
-
-            case CINFOACK:
-                //infoAcknowledgment (new InfoAckMessage (din));
-                infoAcknowledgment();
-
-                break;
-
-            case DCLIPBOARD:
-                setClipboard(new ClipboardDataMessage(header, din));
-                break;
-
-            case CRESETOPTIONS:
-                resetOptions(new ResetOptionsMessage(din));
-                break;
-
-            case DSETOPTIONS:
-                SetOptionsMessage setOptionsMessage = new SetOptionsMessage(header, din);
-                setOptions(setOptionsMessage);
-                break;
-
-            case CCLOSE:
-                // server wants us to hangup
-                Log.debug1("recv close");
-                // client.disconnect (null);
-                return Result.DISCONNECT;
-
-            case EBAD:
-                Log.error("server disconnected due to a protocol error");
-                // client.disconnect("server reported a protocol error");
-                return Result.DISCONNECT;
-
-            default:
-                return Result.UNKNOWN;
-        }
-
-        return Result.OKAY;
-
+    private enum class Result {
+        OKAY, UNKNOWN, DISCONNECT
     }
 
-    private void handleData() {
-        Log.debug("handle data called");
-
-        try {
-            this.din = new DataInputStream(stream.getInputStream());
-            // this.dout = new DataOutputStream (stream.getOutputStream ());
-            // this.oout = new ObjectOutputStream (stream.getOutputStream());
-
-            while (true) {
-                switch (parser.parse()) {
-                    case OKAY:
-                        break;
-                    case UNKNOWN:
-                        Log.error("invalid message from server: " + din.readUTF());
-                        return;
-                    case DISCONNECT:
-                        return;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            // TODO
-        }
+    private enum class EResult {
+        OKAY, UNKNOWN, DISCONNECT
     }
 
-    private void resetKeepAliveAlarm() {
-        if (keepAliveAlarmTimer != null) {
-            keepAliveAlarmTimer.cancel();
-            keepAliveAlarmTimer = null;
-        }
-
-        if (keepAliveAlarm > 0.0) {
-            keepAliveAlarmTimer = new EventQueueTimer(keepAliveAlarm, true, this,
-                    new EventJobInterface() {
-                        public void run(Event event) {
-                            handleKeepAliveAlarm();
-                        }
-                    });
-        }
+    // To define what should parse and process messages
+    private fun interface Parser {
+        @Throws(IOException::class)
+        fun parse(): Result
     }
 
-    private void setKeepAliveRate(double rate) {
-        keepAliveAlarm = rate * KEEP_ALIVE_UNTIL_DEATH;
-        resetKeepAliveAlarm();
+    companion object {
+        private val TAG = ServerProxy::class.simpleName
+        private const val KEEP_ALIVE_UNTIL_DEATH = 3.0
+        private const val KEEP_ALIVE_RATE = 3.0
     }
-
-    private void handleKeepAliveAlarm() {
-        Log.note("server is dead");
-        client.disconnect("server is not responding");
-    }
-
-    private void queryInfo() {
-        ClientInfo info = new ClientInfo(client.getShape(), client.getCursorPos());
-        sendInfo(info);
-    }
-
-    private void sendInfo(ClientInfo info) {
-        try {
-            dout = new DataOutputStream(stream.getOutputStream());
-
-            new InfoMessage(info.getScreenPosition().left,
-                    info.getScreenPosition().top,
-                    info.getScreenPosition().right,
-                    info.getScreenPosition().bottom,
-                    info.getCursorPos().x,
-                    info.getCursorPos().y).write(dout);
-
-        } catch (Exception e) {
-            // TODO
-            e.printStackTrace();
-        }
-    }
-
-    private void infoAcknowledgment() {
-        Log.debug("recv info acknowledgment");
-    }
-
-    public void onInfoChanged() {
-        // send info update
-        queryInfo();
-    }
-
-    private void enter(EnterMessage enterMessage) {
-        Log.debug1("Screen entered: " + enterMessage);
-
-        seqNum = enterMessage.getSequenceNumber();
-        client.enter(enterMessage);
-    }
-
-    private void leave(LeaveMessage leaveMessage) {
-        Log.debug1("Screen left: " + leaveMessage);
-        client.leave(leaveMessage);
-    }
-
-    private void keyUp(KeyUpMessage keyUpMessage) {
-        Log.debug1(keyUpMessage.toString());
-
-        try {
-            client.keyUp(keyUpMessage.getId(), keyUpMessage.getMask(), keyUpMessage.getButton());
-        } catch (Exception e) {
-        }
-    }
-
-    private void keyDown(KeyDownMessage keyDownMessage) {
-        Log.info(keyDownMessage.toString());
-
-        client.keyDown(keyDownMessage.getId(), keyDownMessage.getMask(), keyDownMessage.getButton());
-
-    }
-
-    private void keyRepeat(KeyRepeatMessage keyRepeatMessage) {
-        Log.debug1(keyRepeatMessage.toString());
-
-        try {
-            client.keyRepeat(keyRepeatMessage.getId(), keyRepeatMessage.getMask(), keyRepeatMessage.getButton());
-        } catch (Exception e) {
-        }
-    }
-
-    private void mouseDown(MouseDownMessage mouseDownMessage) {
-        Log.debug(mouseDownMessage.toString());
-        client.mouseDown(mouseDownMessage.getButtonId());
-    }
-
-    private void mouseUp(MouseUpMessage mouseUpMessage) {
-        Log.debug(mouseUpMessage.toString());
-        client.mouseUp(mouseUpMessage.getButtonId());
-    }
-
-    private void mouseWheel(MouseWheelMessage mouseWheelMessage) {
-        client.mouseWheel(mouseWheelMessage.getXDelta(), mouseWheelMessage.getYDelta());
-    }
-
-    private void resetOptions(ResetOptionsMessage resetOptionsMessage) {
-    }
-
-    private void setOptions(SetOptionsMessage setOptionsMessage) {
-    }
-
-    private void screensaver(ScreenSaverMessage screenSaverMessage) {
-    }
-
-    private void grabClipboard(ClipboardMessage clipboardMessage) {
-    }
-
-    private void setClipboard(ClipboardDataMessage clipboardDataMessage) {
-        Log.debug1("Setting clipboard: " + clipboardDataMessage);
-    }
-
 }

@@ -202,7 +202,7 @@ class Client(
     }
 
     private fun setupScreen() = stream?.run {
-        server = ServerProxy(this@Client, stream)
+        server = ServerProxy(this@Client, this)
         EventQueue.getInstance().adoptHandler(
             EventType.SHAPE_CHANGED,
             this@Client.eventTarget
