@@ -33,10 +33,6 @@ package org.synergy.base.utils
  */
 class Log private constructor() {
 
-    init {
-        insert(AndroidLogOutputter(), false)
-    }
-
     enum class Level {
         FATAL,
         ERROR,
@@ -55,14 +51,18 @@ class Log private constructor() {
     private val outputters = mutableListOf<LogOutputterInterface>()
     private val alwaysOutputters = mutableListOf<LogOutputterInterface>()
 
+    init {
+        insert(AndroidLogOutputter(), false)
+    }
+
     private fun insert(
         outputter: LogOutputterInterface,
         alwaysAtHead: Boolean
     ) {
         if (alwaysAtHead) {
-            alwaysOutputters.add(0, outputter)
+            alwaysOutputters.add(outputter)
         } else {
-            outputters.add(0, outputter)
+            outputters.add(outputter)
         }
     }
 
