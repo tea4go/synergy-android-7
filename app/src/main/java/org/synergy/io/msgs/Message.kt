@@ -17,109 +17,109 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io.msgs;
+package org.synergy.io.msgs
 
-import org.synergy.base.utils.Log;
-import org.synergy.io.MessageDataOutputStream;
-
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import org.synergy.base.utils.Log.Companion.debug5
+import org.synergy.io.MessageDataOutputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
+import java.io.IOException
 
 /**
  * Writing:
  * Write to a ByteArrayOutputStream using a DataOutputStream
  * Create the header
  */
-public abstract class Message {
-
-    private MessageType type;
-    protected MessageHeader header;
-    private ByteArrayOutputStream data;
-    protected MessageDataOutputStream dataStream;
-
+abstract class Message {
     /**
-     * Constants for reading messages
+     * Get the message type
      */
-    protected static final int BYTE_SIZE = 1;
-    protected static final int SHORT_SIZE = 2;
-    protected static final int INT_SIZE = 4;
+    var type: MessageType?
+        private set
+
+    var header: MessageHeader?
+        private set
+
+    private var data: ByteArrayOutputStream
+
+    @JvmField
+    protected var dataStream: MessageDataOutputStream
 
     /**
      * This constructor is called when a message is read in.
      * The header information is therefore not important
      */
-    protected Message() {
-        this.type = null;
-        this.header = null;
-        this.data = new ByteArrayOutputStream();
-        this.dataStream = new MessageDataOutputStream(this.data);
+    protected constructor() {
+        type = null
+        header = null
+        data = ByteArrayOutputStream()
+        dataStream = MessageDataOutputStream(data)
     }
 
     /*
      * Create a message
      */
-    public Message(MessageType type) {
-        this.type = type;
-        this.header = new MessageHeader(this.getType());
-        this.data = new ByteArrayOutputStream();
-        this.dataStream = new MessageDataOutputStream(this.data);
+    constructor(type: MessageType) {
+        this.type = type
+        header = MessageHeader(this.type)
+        data = ByteArrayOutputStream()
+        dataStream = MessageDataOutputStream(data)
     }
 
     /**
      * Create a message with a message header
      */
-    public Message(MessageHeader header) {
-        this.header = header;
-        this.type = header.getType();
-        this.data = new ByteArrayOutputStream();
-        this.dataStream = new MessageDataOutputStream(this.data);
+    constructor(header: MessageHeader) {
+        this.header = header
+        type = header.type
+        data = ByteArrayOutputStream()
+        dataStream = MessageDataOutputStream(data)
     }
-
-    /**
-     * Get the message type
-     */
-    public MessageType getType() {
-        return this.type;
-    }
-
 
     /**
      * Get the bytes for this message
      *
      * @return message data in bytes
      */
-    protected byte[] getBytes() {
-        return data.toByteArray();
-    }
+    protected val bytes: ByteArray
+        get() = data.toByteArray()
 
     /**
      * Writes the message data to the byte array stream
      */
-    protected void writeData() throws IOException {
-        throw new IOException("Invalid message. Subclass-ed messages must implement writeData");
+    @Throws(IOException::class)
+    protected open fun writeData() {
+        throw IOException("Invalid message. Subclass-ed messages must implement writeData")
     }
-
 
     /**
      * Write the message header and the message data
      */
-    public final void write(DataOutputStream dout) throws IOException {
-        Log.debug5("Message: Sending: " + this.toString());
+    @Throws(IOException::class)
+    fun write(dout: DataOutputStream) {
+        debug5("Message: Sending: $this")
 
         // Write the message data to the byte array.  
         //  Subclasses MUST override this function
-        writeData();
+        writeData()
 
         // Set the message header size based on how much data
         //  has been written to the byte array stream
-        header.setDataSize(dataStream.size());
-        Log.debug5("Message: Sending Header: " + header);
+        header?.dataSize = dataStream.size()
+        debug5("Message: Sending Header: $header")
 
         // Write out the header and the message data
-        header.write(dout);
-        data.writeTo(dout);
+        header?.write(dout)
+        data.writeTo(dout)
+        dout.flush()
+    }
 
-        dout.flush();
+    companion object {
+        /**
+         * Constants for reading messages
+         */
+        protected const val BYTE_SIZE = 1
+        protected const val SHORT_SIZE = 2
+        protected const val INT_SIZE = 4
     }
 }
