@@ -17,20 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.net;
+package org.synergy.net
 
-public class TCPSocketFactory implements SocketFactoryInterface {
+class TCPSocketFactory : SocketFactoryInterface {
+    override fun create() = TCPSocket()
 
-    public TCPSocketFactory() {
-    }
-
-    public DataSocketInterface create() {
-        return new TCPSocket();
-    }
-
-    public ListenSocketInterface createListen() {
-        return new TCPListenSocket();
-    }
-
+    override fun createListen() = TCPListenSocket()
 }
-
