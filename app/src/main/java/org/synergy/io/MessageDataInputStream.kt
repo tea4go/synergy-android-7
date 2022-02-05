@@ -17,46 +17,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.io;
+package org.synergy.io
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.DataInputStream
+import java.io.IOException
+import java.io.InputStream
 
-public class MessageDataInputStream extends DataInputStream {
+class MessageDataInputStream(`in`: InputStream) : DataInputStream(`in`) {
+    /**
+     * Read in a string.  First reads in the string length and then the string
+     */
+    @Throws(IOException::class)
+    fun readString(): String {
+        val stringLength = readInt()
 
-	public MessageDataInputStream (InputStream in) {
-		super (in);
-	}
-	
-	/**
-	 * Read in a string.  First reads in the string length and then the string
-	 */
-	public String readString () throws IOException {
-		int stringLength = readInt ();
-		
-		// Read in the bytes and convert to a string
-		byte [] stringBytes = new byte [stringLength];
-		read (stringBytes, 0, stringBytes.length);
-		return new String (stringBytes);
-	}
-	
-	
-	/**
-	 * Read an expected string from the stream
-	 * @throws IOException if expected string is not read
-	 */
-	public void readExpectedString (String expectedString) throws IOException {
-		byte [] stringBytes = new byte [expectedString.length()];
-		
-		// Read in the bytes and convert to a string
-		read (stringBytes, 0, stringBytes.length);
-		String readString = new String (stringBytes);
-		
-		if (!readString.equals(expectedString)) {
-			throw new IOException ("Expected string " + expectedString + " not found.  Found: " + readString);
-		}
-	}
-	
-	
+        // Read in the bytes and convert to a string
+        val stringBytes = ByteArray(stringLength)
+        read(stringBytes, 0, stringBytes.size)
+        return String(stringBytes)
+    }
+
+    /**
+     * Read an expected string from the stream
+     * @throws IOException if expected string is not read
+     */
+    @Throws(IOException::class)
+    fun readExpectedString(expectedString: String) {
+        val stringBytes = ByteArray(expectedString.length)
+
+        // Read in the bytes and convert to a string
+        read(stringBytes, 0, stringBytes.size)
+        val readString = String(stringBytes)
+        if (readString != expectedString) {
+            throw IOException("Expected string $expectedString not found.  Found: $readString")
+        }
+    }
 }
