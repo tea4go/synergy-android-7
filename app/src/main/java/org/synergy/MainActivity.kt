@@ -81,11 +81,11 @@ class MainActivity : Activity() {
         val preferences = getPreferences(MODE_PRIVATE)
         val clientName = preferences.getString(PROP_clientName, null)
         if (clientName != null) {
-            (findViewById<EditText>(R.id.clientNameEditText)).setText(clientName)
+            findViewById<EditText>(R.id.clientNameEditText).setText(clientName)
         }
         val serverHost = preferences.getString(PROP_serverHost, null)
         if (serverHost != null) {
-            (findViewById<EditText>(R.id.serverHostEditText)).setText(serverHost)
+            findViewById<EditText>(R.id.serverHostEditText).setText(serverHost)
         }
 
         // TODO make sure we have the appropriate permissions for the accessibility services. Otherwise display error/open settings intent
@@ -152,11 +152,11 @@ class MainActivity : Activity() {
     }
 
     private fun connect() {
-        val clientName = (findViewById<EditText>(R.id.clientNameEditText)).text.toString()
-        val ipAddress = (findViewById<EditText>(R.id.serverHostEditText)).text.toString()
-        val portStr = (findViewById<EditText>(R.id.serverPortEditText)).text.toString()
+        val clientName = findViewById<EditText>(R.id.clientNameEditText).text.toString()
+        val ipAddress = findViewById<EditText>(R.id.serverHostEditText).text.toString()
+        val portStr = findViewById<EditText>(R.id.serverPortEditText).text.toString()
         val port = portStr.toInt()
-        val deviceName = (findViewById<EditText>(R.id.inputDeviceEditText)).text.toString()
+        val deviceName = findViewById<EditText>(R.id.inputDeviceEditText).text.toString()
         val preferences = getPreferences(MODE_PRIVATE)
         val preferencesEditor = preferences.edit()
         preferencesEditor.putString(PROP_clientName, clientName)
