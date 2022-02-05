@@ -17,56 +17,40 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.base.utils;
+package org.synergy.base.utils
 
-public class AndroidLogOutputter implements LogOutputterInterface {
-
-    public AndroidLogOutputter () {
-    }
-
-    public void open (final String title) {
+class AndroidLogOutputter : LogOutputterInterface {
+    override fun open(title: String) {
         // Do nothing
     }
 
-    public void close () {
+    override fun close() {
         // Do nothing
     }
 
-    public void show (final boolean showIfEmpty) {
+    override fun show(showIfEmpty: Boolean) {
         // Do nothing
     }
 
-    public boolean write (Log.Level level, final String tag, final String message) {
-    	switch (level) {
-    	case PRINT:
-    		android.util.Log.v (tag, message);
-    		break;
-    	case FATAL:
-    	case ERROR:
-    		android.util.Log.e (tag, message);
-    		break;
-    	case WARNING:
-    		android.util.Log.w (tag, message);
-    		break;
-    	case NOTE:
-    	case INFO:
-    		android.util.Log.i (tag, message);
-    		break;
-    	case DEBUG:
-    	case DEBUG1:
-    	case DEBUG2:
-    	case DEBUG3:
-    	case DEBUG4:
-    	case DEBUG5:
-    		android.util.Log.d (tag, message);
-    		break;
-    	}
-    	
-    	return true; // wtf
+    override fun write(level: Log.Level, tag: String, message: String): Boolean {
+        when (level) {
+            Log.Level.PRINT -> android.util.Log.v(tag, message)
+            Log.Level.FATAL,
+            Log.Level.ERROR -> android.util.Log.e(tag, message)
+            Log.Level.WARNING -> android.util.Log.w(tag, message)
+            Log.Level.NOTE,
+            Log.Level.INFO -> android.util.Log.i(tag, message)
+            Log.Level.DEBUG,
+            Log.Level.DEBUG1,
+            Log.Level.DEBUG2,
+            Log.Level.DEBUG3,
+            Log.Level.DEBUG4,
+            Log.Level.DEBUG5 -> android.util.Log.d(tag, message)
+        }
+        return true // wtf
     }
-	
-    public void flush () {
-        System.out.flush ();
+
+    override fun flush() {
+        System.out.flush()
     }
-	
 }
