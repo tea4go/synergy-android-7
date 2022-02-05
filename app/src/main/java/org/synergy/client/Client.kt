@@ -53,10 +53,10 @@ class Client(
     private var server: ServerProxy? = null
 
     val shape: Rect
-        get() = screen.shape
+        get() = screen.getShape()
 
     val cursorPos: Point
-        get() = screen.cursorPos
+        get() = screen.getCursorPos()
 
     @Throws(Throwable::class)
     fun finalize() {
@@ -227,7 +227,7 @@ class Client(
     }
 
     override val eventTarget: Any?
-        get() = screen.eventTarget
+        get() = screen.getEventTarget()
 
     private fun handleShapeChanged() {
         Log.debug("resolution changed")

@@ -17,41 +17,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.synergy.common.screens;
+package org.synergy.common.screens
 
-import android.graphics.Point;
-import android.graphics.Rect;
+import android.graphics.Point
+import android.graphics.Rect
 
-public interface ScreenInterface {
+interface ScreenInterface {
+    fun getEventTarget(): Any?
 
-    public Object getEventTarget();
+    fun getShape(): Rect
 
-    public Rect getShape();
+    fun getCursorPos(): Point
 
-    public Point getCursorPos();
+    fun enable()
 
-    public void enable();
+    fun disable()
 
-    public void disable();
+    fun enter(toggleMask: Int)
 
-    public void enter(int toggleMask);
+    fun leave(): Boolean
 
-    public boolean leave();
+    fun keyDown(keyEventID: Int, mask: Int, button: Int)
 
-    public void keyDown(int keyEventID, int mask, int button);
+    fun keyUp(keyEventID: Int, mask: Int, button: Int)
 
-    public void keyUp(int keyEventID, int mask, int button);
+    fun keyRepeat(keyEventID: Int, mask: Int, button: Int)
 
-    public void keyRepeat(int keyEventID, int mask, int button);
+    fun mouseDown(buttonID: Int)
 
-    public void mouseDown(int buttonID);
+    fun mouseUp(buttonID: Int)
 
-    public void mouseUp(int buttonID);
+    fun mouseMove(x: Int, y: Int)
 
-    public void mouseMove(int x, int y);
+    fun mouseRelativeMove(x: Int, y: Int)
 
-    public void mouseRelativeMove(int x, int y);
-
-    public void mouseWheel(int x, int y);
-
+    fun mouseWheel(x: Int, y: Int)
 }
