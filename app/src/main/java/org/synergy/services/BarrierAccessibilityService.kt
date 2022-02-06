@@ -95,7 +95,9 @@ class BarrierAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        windowManager.removeView(cursorView)
+        if (cursorView.isAttachedToWindow) {
+            windowManager.removeView(cursorView)
+        }
     }
 
     private fun registerBroadcastReceiver() {
