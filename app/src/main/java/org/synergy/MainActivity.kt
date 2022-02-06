@@ -34,7 +34,6 @@ import android.widget.Toast
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import org.synergy.base.utils.Log
 import org.synergy.services.BarrierAccessibilityService
 import org.synergy.services.BarrierClientService
 import org.synergy.services.BarrierClientService.Companion.EXTRA_CLIENT_NAME
@@ -46,6 +45,7 @@ import org.synergy.utils.AccessibilityUtils
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
 import org.synergy.utils.DisplayUtils
+import timber.log.Timber
 
 class MainActivity : Activity() {
     private var barrierClientServiceBound: Boolean = false
@@ -91,11 +91,6 @@ class MainActivity : Activity() {
         // TODO make sure we have the appropriate permissions for the accessibility services. Otherwise display error/open settings intent
         val connectButton = findViewById<Button>(R.id.connectButton)
         connectButton.setOnClickListener { connect() }
-        if (BuildConfig.DEBUG) {
-            Log.logLevel = Log.Level.DEBUG
-        } else {
-            Log.logLevel = Log.Level.ERROR
-        }
     }
 
     override fun onResume() {
@@ -143,7 +138,7 @@ class MainActivity : Activity() {
             this,
             BarrierAccessibilityService::class.java
         )
-        Log.debug("accessibility enabled: $enabled")
+        Timber.d("accessibility enabled: $enabled")
         if (!enabled) {
             // show dialog
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
@@ -166,7 +161,7 @@ class MainActivity : Activity() {
 
         val displayBounds = DisplayUtils.getDisplayBounds(this)
         if (displayBounds == null) {
-            Log.error("displayBounds is null")
+            Timber.e("displayBounds is null")
             Toast.makeText(applicationContext, "displayBounds is null", Toast.LENGTH_LONG).show()
             return
         }

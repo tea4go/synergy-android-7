@@ -31,6 +31,7 @@ package org.synergy.base.utils
  *
  * @author Shaun Patterson
  */
+@Deprecated("Use Timber instead")
 class Log private constructor() {
 
     enum class Level {
