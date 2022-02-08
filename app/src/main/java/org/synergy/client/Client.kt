@@ -290,8 +290,8 @@ class Client(
     /**
      * @param keyEventID A VK_ defined in KeyEvent
      */
-    fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {
-        screen.keyDown(keyEventID, mask, button)
+    fun keyRepeat(keyEventID: Int, mask: Int, count: Int, button: Int) {
+        screen.keyRepeat(keyEventID, mask, count, button)
     }
 
     /**

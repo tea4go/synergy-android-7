@@ -120,7 +120,10 @@ class BasicScreen(private val context: Context) : ScreenInterface {
         )
     }
 
-    override fun keyRepeat(keyEventID: Int, mask: Int, button: Int) {}
+    override fun keyRepeat(id: Int, mask: Int, count: Int, button: Int) {
+        // Timber.d("keyRepeat: id: $id, mask: $mask, count: $count, button: $button")
+        keyDown(id, mask, button)
+    }
 
     override fun mouseDown(buttonID: Int) {
         isMouseDown = true

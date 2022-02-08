@@ -249,14 +249,12 @@ class ServerProxy(private val client: Client, private val stream: Stream) {
 
     private fun keyRepeat(keyRepeatMessage: KeyRepeatMessage) {
         debug1(keyRepeatMessage.toString())
-        try {
-            client.keyRepeat(
-                keyRepeatMessage.getId(),
-                keyRepeatMessage.getMask(),
-                keyRepeatMessage.getButton()
-            )
-        } catch (e: Exception) {
-        }
+        client.keyRepeat(
+            keyRepeatMessage.id,
+            keyRepeatMessage.mask,
+            keyRepeatMessage.count,
+            keyRepeatMessage.button,
+        )
     }
 
     private fun mouseDown(mouseDownMessage: MouseDownMessage) {

@@ -41,7 +41,7 @@ interface ScreenInterface {
 
     fun keyUp(id: Int, mask: Int, button: Int)
 
-    fun keyRepeat(keyEventID: Int, mask: Int, button: Int)
+    fun keyRepeat(id: Int, mask: Int, count: Int, button: Int)
 
     fun mouseDown(buttonID: Int)
 
