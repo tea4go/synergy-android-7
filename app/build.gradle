@@ -37,6 +37,4 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0"
 
     implementation "androidx.core:core-ktx:$core_version"
-
-    implementation 'com.jakewharton.timber:timber:5.0.1'
 }

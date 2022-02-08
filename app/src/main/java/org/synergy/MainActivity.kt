@@ -34,6 +34,9 @@ import android.widget.Toast
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import org.synergy.base.utils.Timber
+import org.synergy.base.utils.d
+import org.synergy.base.utils.e
 import org.synergy.services.BarrierAccessibilityService
 import org.synergy.services.BarrierClientService
 import org.synergy.services.BarrierClientService.Companion.EXTRA_CLIENT_NAME
@@ -45,7 +48,6 @@ import org.synergy.utils.AccessibilityUtils
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
 import org.synergy.utils.DisplayUtils
-import timber.log.Timber
 
 class MainActivity : Activity() {
     private var barrierClientServiceBound: Boolean = false
