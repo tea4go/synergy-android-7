@@ -146,10 +146,11 @@ object AccessibilityNodeInfoUtils {
         node: AccessibilityNodeInfoCompat,
         granularity: Int,
         direction: MoveDirection,
+        extendSelection: Boolean = false,
     ): Boolean {
         val args = Bundle().apply {
             putInt(ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT, granularity)
-            putBoolean(ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN, false)
+            putBoolean(ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN, extendSelection)
         }
         val action = if (direction == PREVIOUS) {
             ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY
@@ -158,4 +159,17 @@ object AccessibilityNodeInfoUtils {
         }
         return node.performAction(action, args)
     }
+
+    fun copyText(node: AccessibilityNodeInfoCompat): Boolean {
+        val previousSelectionStart = node.textSelectionStart.coerceAtLeast(0)
+        val previousSelectionEnd = node.textSelectionEnd.coerceAtLeast(0)
+        val performed = node.performAction(ACTION_COPY)
+        node.refresh()
+        selectText(node, previousSelectionStart, previousSelectionEnd)
+        return performed
+    }
+
+    fun cutText(node: AccessibilityNodeInfoCompat) = node.performAction(ACTION_CUT)
+
+    fun pasteText(node: AccessibilityNodeInfoCompat) = node.performAction(ACTION_PASTE)
 }

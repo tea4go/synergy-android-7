@@ -10,7 +10,6 @@ import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.os.Build
-import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent.*
 import android.view.View
@@ -20,16 +19,16 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.*
 import org.synergy.R
-import org.synergy.common.key.BarrierKeyEvent
-import org.synergy.common.key.MODIFIER_KEY_GLOBAL_ACTION_MAP
-import org.synergy.common.key.ONE_KEY_GLOBAL_ACTION_MAP
-import org.synergy.common.key.ONE_KEY_TEXT_NODE_ACTION_MAP
+import org.synergy.common.key.*
 import org.synergy.services.BarrierAccessibilityAction.*
 import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.NEXT
 import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.PREVIOUS
+import org.synergy.utils.AccessibilityNodeInfoUtils.copyText
+import org.synergy.utils.AccessibilityNodeInfoUtils.cutText
 import org.synergy.utils.AccessibilityNodeInfoUtils.deleteText
 import org.synergy.utils.AccessibilityNodeInfoUtils.insertText
 import org.synergy.utils.AccessibilityNodeInfoUtils.moveCursor
+import org.synergy.utils.AccessibilityNodeInfoUtils.pasteText
 import org.synergy.utils.GestureUtils.click
 import org.synergy.utils.GestureUtils.longClick
 import org.synergy.utils.GestureUtils.path
@@ -78,7 +77,9 @@ class BarrierAccessibilityService : AccessibilityService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        windowManager.addView(cursorView, cursorLayout)
+        if (!cursorView.isAttachedToWindow) {
+            windowManager.addView(cursorView, cursorLayout)
+        }
         return START_STICKY
     }
 
@@ -180,7 +181,7 @@ class BarrierAccessibilityService : AccessibilityService() {
     }
 
     private fun keyEvent(keyEvent: BarrierKeyEvent?) {
-        Log.d(TAG, "keyEvent: $keyEvent")
+        // Timber.d("keyEvent: $keyEvent")
         if (keyEvent == null || !keyEvent.hasValidKeyCode) {
             return
         }
@@ -189,30 +190,14 @@ class BarrierAccessibilityService : AccessibilityService() {
             ACTION_UP -> keyUp(keyEvent)
             else -> return
         }
-        // if (keyEvent.isModifier) {
-        //     // modifier keys are handled on key up
-        //     return
-        // }
-        // if (keyEvent.isGlobalAction) {
-        //     handleGlobalActionKey(keyEvent)
-        //     return
-        // }
     }
 
     private fun keyDown(keyEvent: BarrierKeyEvent) {
-        // Log.d(TAG, "keyDown: hasNoModifiers: ${keyEvent.hasNoModifiers}, ${keyEvent.unicodeChar.toChar()}")
-        val handled = handleKeyDownEvent(keyEvent)
-        if (!handled) {
-            return
-        }
-        // if key event was handled and had modifier, skip handling the modifier on key up
-        if (keyEvent.hasModifiers) {
+        handleKeyDownEvent(keyEvent)
+        // if key event had modifiers, skip handling the modifier on key up
+        if (!BarrierKeyEvent.isModifierKey(keyEvent.keyCode) && keyEvent.hasModifiers) {
             skipModifiersOnKeyUp = true
         }
-        // getComboAction(keyEvent)
-        // if (keyEvent.isCharacter) {
-        //     Log.d(TAG, "keyEvent: character: ${keyEvent.unicodeChar.toChar()}")
-        // }
     }
 
     private fun handleKeyDownEvent(keyEvent: BarrierKeyEvent): Boolean {
@@ -221,6 +206,10 @@ class BarrierAccessibilityService : AccessibilityService() {
             return true
         }
         handled = handleOneKeyActionEvent(keyEvent)
+        if (handled) {
+            return true
+        }
+        handled = handleTwoKeyActionEvent(keyEvent)
         if (handled) {
             return true
         }
@@ -260,24 +249,44 @@ class BarrierAccessibilityService : AccessibilityService() {
             return false
         }
         if (ONE_KEY_GLOBAL_ACTION_MAP.containsKey(keyEvent.keyCode)) {
-            return handleGlobalActionEvent(keyEvent)
+            return handleOneKeyGlobalActionEvent(keyEvent)
         }
         if (ONE_KEY_TEXT_NODE_ACTION_MAP.containsKey(keyEvent.keyCode)) {
-            return handleTextNodeActionEvent(keyEvent)
+            return handleOneKeyTextNodeActionEvent(keyEvent)
         }
         return false
     }
 
-    private fun handleGlobalActionEvent(keyEvent: BarrierKeyEvent): Boolean {
+    /**
+     * Handles key combo
+     */
+    private fun handleTwoKeyActionEvent(keyEvent: BarrierKeyEvent): Boolean {
+        if (keyEvent.hasNoModifiers) {
+            return false
+        }
+        // find the first matching combo
+        var handled = handleTwoKeyGlobalActionEvent(keyEvent)
+        if (handled) {
+            return true
+        }
+        handled = handleTwoKeyTextNodeActionEvent(keyEvent)
+        if (handled) {
+            return true
+        }
+        return false
+    }
+
+    private fun handleOneKeyGlobalActionEvent(keyEvent: BarrierKeyEvent): Boolean {
         val action = ONE_KEY_GLOBAL_ACTION_MAP[keyEvent.keyCode] ?: return false
         return performGlobalAction(action)
     }
 
-    private fun handleTextNodeActionEvent(keyEvent: BarrierKeyEvent): Boolean {
+    private fun handleOneKeyTextNodeActionEvent(keyEvent: BarrierKeyEvent): Boolean {
         if (!ONE_KEY_TEXT_NODE_ACTION_MAP.containsKey(keyEvent.keyCode)) {
             return false
         }
         val node = focusedInputNode ?: return false
+        node.refresh()
         val performed = when (keyEvent.keyCode) {
             KEYCODE_DEL -> deleteText(node)
             KEYCODE_FORWARD_DEL -> deleteText(node, true)
@@ -287,11 +296,62 @@ class BarrierAccessibilityService : AccessibilityService() {
             KEYCODE_DPAD_RIGHT -> moveCursor(node, MOVEMENT_GRANULARITY_CHARACTER, NEXT)
             else -> false
         }
-        node.refresh()
         return performed
     }
 
-    companion object {
-        private const val TAG = "BarrierAccessibilitySer"
+    private fun handleTwoKeyGlobalActionEvent(keyEvent: BarrierKeyEvent): Boolean {
+        val (_, action) = TWO_KEY_COMBO_GLOBAL_ACTION_MAP[keyEvent.keyCode]
+            ?.asSequence()
+            ?.find { (key, _) -> keyEvent.hasTheseModifiers(key) }
+            ?: return false
+        return performGlobalAction(action)
+    }
+
+    private fun handleTwoKeyTextNodeActionEvent(keyEvent: BarrierKeyEvent): Boolean {
+        val node = focusedInputNode ?: return false
+        val (_, action) = TWO_KEY_COMBO_TEXT_NODE_ACTION_MAP[keyEvent.keyCode]
+            ?.asSequence()
+            ?.find { (key, _) -> keyEvent.hasTheseModifiers(key) }
+            ?: return false
+
+        // Timber.d("node: $node, action: $action")
+        node.refresh()
+        val performed = when (action) {
+            ACTION_COPY -> copyText(node)
+            ACTION_CUT -> cutText(node)
+            ACTION_PASTE -> pasteText(node)
+            ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY -> return when (keyEvent.keyCode) {
+                KEYCODE_DPAD_LEFT -> moveCursor(
+                    node,
+                    MOVEMENT_GRANULARITY_CHARACTER,
+                    PREVIOUS,
+                    true
+                )
+                KEYCODE_MOVE_HOME -> moveCursor(
+                    node,
+                    MOVEMENT_GRANULARITY_LINE,
+                    PREVIOUS,
+                    true
+                )
+                else -> false
+            }
+            ACTION_NEXT_AT_MOVEMENT_GRANULARITY -> return when (keyEvent.keyCode) {
+                KEYCODE_DPAD_RIGHT -> moveCursor(
+                    node,
+                    MOVEMENT_GRANULARITY_CHARACTER,
+                    NEXT,
+                    true
+                )
+                KEYCODE_MOVE_END -> moveCursor(
+                    node,
+                    MOVEMENT_GRANULARITY_LINE,
+                    NEXT,
+                    true
+                )
+                else -> false
+            }
+            else -> false
+        }
+        return performed
     }
 }

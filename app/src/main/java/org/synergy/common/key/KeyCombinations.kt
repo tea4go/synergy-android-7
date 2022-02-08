@@ -31,27 +31,45 @@ val MODIFIER_KEY_GLOBAL_ACTION_MAP = mapOf(
 )
 
 /**
- * 2-key combinations to Action mappings
+ * 2-key combinations to global Action mappings
  * eg: Win+D, Alt+Tab
  */
-val TWO_KEY_COMBO_TO_ACTION_MAP = mapOf(
+val TWO_KEY_COMBO_GLOBAL_ACTION_MAP = mapOf(
     KEYCODE_A to mapOf(
-        KEYCODE_SUPER_RIGHT to GLOBAL_ACTION_NOTIFICATIONS, // Win+A => Notifications
-        KEYCODE_SUPER_LEFT to GLOBAL_ACTION_NOTIFICATIONS,
+        META_SUPER_ON to GLOBAL_ACTION_NOTIFICATIONS, // Win+A => Notifications
     ),
     KEYCODE_D to mapOf(
-        KEY_MODIFIER_SUPER to GLOBAL_ACTION_HOME, // Win+D => Home
+        META_SUPER_ON to GLOBAL_ACTION_HOME, // Win+D => Home
     ),
     KEYCODE_TAB to mapOf(
-        KEY_MODIFIER_ALT to GLOBAL_ACTION_RECENTS, // Alt+Tab => Recents
+        META_ALT_ON to GLOBAL_ACTION_RECENTS, // Alt+Tab => Recents
     ),
+)
+
+/**
+ * 2-key combinations to text Action mappings
+ * eg: Ctrl+C, Ctrl+V
+ */
+val TWO_KEY_COMBO_TEXT_NODE_ACTION_MAP = mapOf(
     KEYCODE_C to mapOf(
-        KEY_MODIFIER_CONTROL to ACTION_COPY, // Ctrl+C => Copy
+        META_CTRL_ON to ACTION_COPY, // Ctrl+C => Copy
     ),
     KEYCODE_X to mapOf(
-        KEY_MODIFIER_CONTROL to ACTION_CUT, // Ctrl+X => Cut
+        META_CTRL_ON to ACTION_CUT, // Ctrl+X => Cut
     ),
     KEYCODE_V to mapOf(
-        KEY_MODIFIER_CONTROL to ACTION_PASTE, // Ctrl+V => Paste
+        META_CTRL_ON to ACTION_PASTE, // Ctrl+V => Paste
+    ),
+    KEYCODE_DPAD_LEFT to mapOf(
+        META_SHIFT_ON to ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
+    ),
+    KEYCODE_DPAD_RIGHT to mapOf(
+        META_SHIFT_ON to ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
+    ),
+    KEYCODE_MOVE_HOME to mapOf(
+        META_SHIFT_ON to ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
+    ),
+    KEYCODE_MOVE_END to mapOf(
+        META_SHIFT_ON to ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
     ),
 )

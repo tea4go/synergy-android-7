@@ -31,11 +31,13 @@ class BarrierKeyEvent : KeyEvent {
 
     val isModifier by lazy { isModifierKey(keyCode) }
 
-    private val hasNoModifiers: Boolean by lazy {
+    val hasNoModifiers: Boolean by lazy {
         normalizeMetaState(metaState) and META_MODIFIER_MASK == 0
     }
 
     val hasModifiers: Boolean by lazy { !hasNoModifiers }
+
+    fun hasTheseModifiers(modifiers: Int) = metaStateHasModifiers(metaState, modifiers)
 
     /**
      * Returns the pressed state of the SUPER meta key.
@@ -62,6 +64,36 @@ class BarrierKeyEvent : KeyEvent {
     }
 
     companion object {
+
+        /**
+         * SHIFT key locked in CAPS mode.
+         * Reserved for use by [MetaKeyKeyListener] for a published constant in its API.
+         * @hide
+         */
+        private const val META_CAP_LOCKED = 0x100
+
+        /**
+         * ALT key locked.
+         * Reserved for use by [MetaKeyKeyListener] for a published constant in its API.
+         * @hide
+         */
+        private const val META_ALT_LOCKED = 0x200
+
+        /**
+         * SYM key locked.
+         * Reserved for use by [MetaKeyKeyListener] for a published constant in its API.
+         * @hide
+         */
+        private const val META_SYM_LOCKED = 0x400
+
+        /**
+         * Text is in selection mode.
+         * Reserved for use by [MetaKeyKeyListener] for a private unpublished constant
+         * in its API that is currently being retained for legacy reasons.
+         * @hide
+         */
+        private const val META_SELECTING = 0x800
+
         private fun getKeyCodeFromId(id: Int) = KEY_ID_TO_KEYCODE_MAP[id] ?: KEYCODE_UNKNOWN
 
         private fun getMetaStateFromMask(mask: Int) = getActiveMasks(mask).fold(0) { acc, m ->
@@ -79,6 +111,11 @@ class BarrierKeyEvent : KeyEvent {
             META_CAPS_LOCK_ON or META_NUM_LOCK_ON or META_SCROLL_LOCK_ON
 
         private const val META_ALL_MASK = META_MODIFIER_MASK or META_LOCK_MASK
+
+        private const val META_SYNTHETIC_MASK: Int =
+            META_CAP_LOCKED or META_ALT_LOCKED or META_SYM_LOCKED or META_SELECTING
+
+        private const val META_INVALID_MODIFIER_MASK: Int = META_LOCK_MASK or META_SYNTHETIC_MASK
 
         private val META_SYMBOLIC_NAMES = arrayOf(
             "META_SHIFT_ON",
@@ -237,11 +274,12 @@ class BarrierKeyEvent : KeyEvent {
          *
          *
          * @return True if the key code is one of
-         * [.KEYCODE_SHIFT_LEFT] [.KEYCODE_SHIFT_RIGHT],
-         * [.KEYCODE_ALT_LEFT], [.KEYCODE_ALT_RIGHT],
-         * [.KEYCODE_CTRL_LEFT], [.KEYCODE_CTRL_RIGHT],
-         * [.KEYCODE_META_LEFT], or [.KEYCODE_META_RIGHT],
-         * [.KEYCODE_SYM], [.KEYCODE_NUM], [.KEYCODE_FUNCTION].
+         * [KeyEvent.KEYCODE_SHIFT_LEFT] [KeyEvent.KEYCODE_SHIFT_RIGHT],
+         * [KeyEvent.KEYCODE_ALT_LEFT], [KeyEvent.KEYCODE_ALT_RIGHT],
+         * [KeyEvent.KEYCODE_CTRL_LEFT], [KeyEvent.KEYCODE_CTRL_RIGHT],
+         * [KeyEvent.KEYCODE_META_LEFT], or [KeyEvent.KEYCODE_META_RIGHT],
+         * [KeyEvent.KEYCODE_SYM], [KeyEvent.KEYCODE_NUM], [KeyEvent.KEYCODE_FUNCTION],
+         * [KEYCODE_SUPER_LEFT], [KEYCODE_SUPER_RIGHT].
          */
         fun isModifierKey(keyCode: Int): Boolean {
             return when (keyCode) {
@@ -261,5 +299,8 @@ class BarrierKeyEvent : KeyEvent {
                 else -> false
             }
         }
+
+        fun metaStateHasModifiers(metaState: Int, modifiers: Int) =
+            normalizeMetaState(metaState) and modifiers != 0
     }
 }
