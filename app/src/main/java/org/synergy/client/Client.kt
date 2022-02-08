@@ -25,7 +25,10 @@ import org.synergy.base.Event
 import org.synergy.base.EventQueue
 import org.synergy.base.EventTarget
 import org.synergy.base.EventType
-import org.synergy.base.utils.Log
+import org.synergy.base.utils.Timber
+import org.synergy.base.utils.d
+import org.synergy.base.utils.d1
+import org.synergy.base.utils.e
 import org.synergy.common.screens.ScreenInterface
 import org.synergy.io.Stream
 import org.synergy.io.msgs.EnterMessage
@@ -68,7 +71,7 @@ class Client(
             return
         }
         serverAddress.resolve()
-        Log.debug("Connecting to: '${serverAddress.hostname}': ${serverAddress.address}:${serverAddress.port}")
+        Timber.d("Connecting to: '${serverAddress.hostname}': ${serverAddress.address}:${serverAddress.port}")
 
         // create the socket
         val socket = socketFactory.create()
@@ -80,7 +83,7 @@ class Client(
         // }
 
         // connect
-        Log.debug("connecting to server")
+        Timber.d("connecting to server")
         setupConnecting()
         setupTimer()
         socket.connect(serverAddress)
@@ -127,7 +130,7 @@ class Client(
     }
 
     private fun handleConnected() {
-        Log.debug1("connected; wait for hello")
+        Timber.d1("connected; wait for hello")
         cleanupConnecting()
         setupConnection()
 
@@ -135,21 +138,21 @@ class Client(
     }
 
     private fun handleConnectionFailed() {
-        Log.debug("connection failed")
+        Timber.d("connection failed")
     }
 
     private fun handleDisconnected() {
-        Log.debug("disconnected")
+        Timber.d("disconnected")
         connectionChangeListener(false)
     }
 
     private fun handleHello() = stream?.run {
-        Log.debug("handling hello")
+        Timber.d1("handling hello")
         try {
             // Read in the Hello Message
             val din = DataInputStream(getInputStream())
             val helloMessage = HelloMessage(din)
-            Log.debug1("Read hello message: $helloMessage")
+            Timber.d1("Read hello message: $helloMessage")
 
             // TODO check versions
 
@@ -174,7 +177,7 @@ class Client(
                 )
             }
         } catch (e: Exception) {
-            Log.error(e.localizedMessage ?: "")
+            Timber.e(e)
         }
     }
 
@@ -227,7 +230,7 @@ class Client(
         get() = screen.getEventTarget()
 
     private fun handleShapeChanged() {
-        Log.debug("resolution changed")
+        Timber.d1("resolution changed")
         server?.onInfoChanged()
     }
 
