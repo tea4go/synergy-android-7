@@ -26,7 +26,8 @@ import android.view.KeyEvent.ACTION_DOWN
 import android.view.KeyEvent.ACTION_UP
 import android.view.ViewConfiguration
 import android.view.ViewConfiguration.getTapTimeout
-import org.synergy.base.utils.Log
+import org.synergy.base.utils.Timber
+import org.synergy.base.utils.d1
 import org.synergy.common.key.BarrierKeyEvent
 import org.synergy.services.BarrierAccessibilityAction.*
 import java.util.*
@@ -84,7 +85,7 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     }
 
     override fun keyDown(id: Int, mask: Int, button: Int) {
-        Log.debug("keyDown: id: $id, mask: $mask, button: $button")
+        Timber.d1("keyDown: id: $id, mask: $mask, button: $button")
         val date = Date()
         downKeys[id] = date.time
         context.sendBroadcast(
@@ -102,7 +103,7 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     }
 
     override fun keyUp(id: Int, mask: Int, button: Int) {
-        Log.debug("keyUp: id: $id, mask: $mask, button: $button")
+        Timber.d1("keyUp: id: $id, mask: $mask, button: $button")
         val downTime = downKeys[id] ?: 0
         downKeys.remove(id)
         val date = Date()
@@ -121,7 +122,7 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     }
 
     override fun keyRepeat(id: Int, mask: Int, count: Int, button: Int) {
-        // Timber.d("keyRepeat: id: $id, mask: $mask, count: $count, button: $button")
+        // Timber.d1("keyRepeat: id: $id, mask: $mask, count: $count, button: $button")
         keyDown(id, mask, button)
     }
 
@@ -168,8 +169,6 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     }
 
     override fun mouseMove(x: Int, y: Int) {
-        // Log.debug("mouseMove: $x, $y")
-
         // this state appears to signal a screen exit, use this to
         // flag mouse position reinitialization for next call
         // to this method.
@@ -210,7 +209,6 @@ class BasicScreen(private val context: Context) : ScreenInterface {
     override fun mouseRelativeMove(x: Int, y: Int) {}
 
     override fun mouseWheel(x: Int, y: Int) {
-        // Log.debug("mouse wheel: $x, $y")
         val center = Point(width / 2, height / 2)
         val point = Point(center).apply { offset(x, y) }
         point.x = point.x.coerceIn(1, width - 1)
