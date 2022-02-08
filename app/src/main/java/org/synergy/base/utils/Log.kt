@@ -31,9 +31,10 @@ package org.synergy.base.utils
  *
  * @author Shaun Patterson
  */
-@Deprecated("Use Timber instead")
+@Deprecated("Use Timber")
 class Log private constructor() {
 
+    @Deprecated("Use Timber")
     enum class Level {
         FATAL,
         ERROR,
@@ -113,50 +114,138 @@ class Log private constructor() {
         @Volatile
         private var instance: Log? = null
 
-        fun getInstance() = instance ?: synchronized(this) {
+        private fun getInstance() = instance ?: synchronized(this) {
             Log().also { instance = it }
         }
 
+        @Deprecated(
+            "Use Timber.p(message)",
+            ReplaceWith(
+                "Timber.p(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.p"
+            )
+        )
         fun print(message: String) {
             getInstance().print(Level.PRINT, message)
         }
 
+        @Deprecated(
+            "Use Timber.f(message)",
+            ReplaceWith(
+                "Timber.f(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.f"
+            )
+        )
         fun fatal(message: String) {
             getInstance().print(Level.FATAL, message)
         }
 
+        @Deprecated(
+            "Use Timber.e(message)",
+            ReplaceWith(
+                "Timber.e(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.e"
+            )
+        )
         fun error(message: String) {
             getInstance().print(Level.ERROR, message)
         }
 
+        @Deprecated(
+            "Use Timber.i(message)",
+            ReplaceWith(
+                "Timber.i(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.i"
+            )
+        )
         fun info(message: String) {
             getInstance().print(Level.INFO, message)
         }
 
+        @Deprecated(
+            "Use Timber.n(message)",
+            ReplaceWith(
+                "Timber.n(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.n"
+            )
+        )
         fun note(message: String) {
             getInstance().print(Level.NOTE, message)
         }
 
+        @Deprecated(
+            "Use Timber.d(message)",
+            ReplaceWith(
+                "Timber.d(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.d"
+            )
+        )
         fun debug(message: String) {
             getInstance().print(Level.DEBUG, message)
         }
 
+        @Deprecated(
+            "Use Timber.d1(message)",
+            ReplaceWith(
+                "Timber.d1(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.d1"
+            )
+        )
         fun debug1(message: String) {
             getInstance().print(Level.DEBUG1, message)
         }
 
+        @Deprecated(
+            "Use Timber.d2(message)",
+            ReplaceWith(
+                "Timber.d2(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.d2"
+            )
+        )
         fun debug2(message: String) {
             getInstance().print(Level.DEBUG2, message)
         }
 
+        @Deprecated(
+            "Use Timber.d3(message)",
+            ReplaceWith(
+                "Timber.d3(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.d3"
+            )
+        )
         fun debug3(message: String) {
             getInstance().print(Level.DEBUG3, message)
         }
 
+        @Deprecated(
+            "Use Timber.d4(message)",
+            ReplaceWith(
+                "Timber.d4(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.d4"
+            )
+        )
         fun debug4(message: String) {
             getInstance().print(Level.DEBUG4, message)
         }
 
+        @Deprecated(
+            "Use Timber.d5(message)",
+            ReplaceWith(
+                "Timber.d5(message)",
+                "org.synergy.base.utils.Timber",
+                "org.synergy.base.utils.Timber.d5"
+            )
+        )
         fun debug5(message: String) {
             getInstance().print(Level.DEBUG5, message)
         }
