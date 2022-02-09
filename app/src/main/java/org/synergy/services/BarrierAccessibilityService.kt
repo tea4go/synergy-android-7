@@ -19,7 +19,7 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.*
 import org.synergy.R
-import org.synergy.common.key.*
+import org.synergy.barrier.common.key.*
 import org.synergy.services.BarrierAccessibilityAction.*
 import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.NEXT
 import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.PREVIOUS

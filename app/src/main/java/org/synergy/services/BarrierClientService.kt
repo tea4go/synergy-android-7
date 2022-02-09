@@ -10,14 +10,14 @@ import android.os.IBinder
 import kotlinx.coroutines.*
 import org.synergy.MainActivity
 import org.synergy.R
-import org.synergy.base.EventQueue
-import org.synergy.base.EventType
-import org.synergy.base.utils.Log
-import org.synergy.client.Client
-import org.synergy.common.screens.BasicScreen
-import org.synergy.net.NetworkAddress
-import org.synergy.net.SocketFactoryInterface
-import org.synergy.net.TCPSocketFactory
+import org.synergy.barrier.base.EventQueue
+import org.synergy.barrier.base.EventType
+import org.synergy.barrier.base.utils.Log
+import org.synergy.barrier.client.Client
+import org.synergy.barrier.common.screens.BasicScreen
+import org.synergy.barrier.net.NetworkAddress
+import org.synergy.barrier.net.SocketFactoryInterface
+import org.synergy.barrier.net.TCPSocketFactory
 import org.synergy.utils.Constants.BARRIER_CLIENT_SERVICE_ONGOING_NOTIFICATION_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 

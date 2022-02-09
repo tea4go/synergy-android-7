@@ -1,9 +1,9 @@
 package org.synergy
 
 import android.app.Application
-import org.synergy.base.utils.BarrierDebugTree
-import org.synergy.base.utils.Log
-import org.synergy.base.utils.Timber
+import org.synergy.barrier.base.utils.BarrierDebugTree
+import org.synergy.barrier.base.utils.Log
+import org.synergy.barrier.base.utils.Timber
 
 @Suppress("unused")
 class BarrierClientApp : Application() {

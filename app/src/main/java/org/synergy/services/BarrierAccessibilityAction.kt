@@ -2,7 +2,7 @@ package org.synergy.services
 
 import android.content.Intent
 import android.graphics.Point
-import org.synergy.common.key.BarrierKeyEvent
+import org.synergy.barrier.common.key.BarrierKeyEvent
 import android.view.KeyEvent as AndroidKeyEvent
 
 sealed class BarrierAccessibilityAction(val intentAction: String) {
