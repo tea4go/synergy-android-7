@@ -13,4 +13,5 @@
     <string name="input_device_name">Input device name</string>
     <string name="default_input_device_name">touchscreen</string>
     <string name="cursor">Cursor</string>
+    <string name="overlay_permission_denied">Draw over other apps permission denied</string>
 </resources>

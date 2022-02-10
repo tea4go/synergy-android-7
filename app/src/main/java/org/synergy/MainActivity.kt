@@ -19,7 +19,6 @@
  */
 package org.synergy
 
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -31,6 +30,8 @@ import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -49,7 +50,7 @@ import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
 import org.synergy.utils.DisplayUtils
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
     private var barrierClientServiceBound: Boolean = false
     private var barrierClientService: BarrierClientService? = null
     private var barrierClientConnected: Boolean = false
@@ -74,6 +75,17 @@ class MainActivity : Activity() {
             barrierClientService = null
             barrierClientServiceBound = false
         }
+    }
+
+    private val overlayPermActivityLauncher = registerForActivityResult(StartActivityForResult()) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
+            return@registerForActivityResult
+        }
+        Toast.makeText(
+            this,
+            getString(R.string.overlay_permission_denied),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,19 +114,6 @@ class MainActivity : Activity() {
         requestAccessibilityPermission()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == OVERLAY_DRAWING_REQUEST_CODE) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-                Toast.makeText(
-                    this,
-                    "Draw over other apps permission denied",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         unbindService(serviceConnection)
@@ -127,11 +126,9 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse(
-                    "package:$packageName"
-                )
+                Uri.parse("package:$packageName")
             )
-            startActivityForResult(intent, OVERLAY_DRAWING_REQUEST_CODE)
+            overlayPermActivityLauncher.launch(intent)
         }
     }
 
@@ -222,7 +219,5 @@ class MainActivity : Activity() {
         private const val PROP_clientName = "clientName"
         private const val PROP_serverHost = "serverHost"
         private const val PROP_deviceName = "deviceName"
-
-        private const val OVERLAY_DRAWING_REQUEST_CODE = 4711
     }
 }
