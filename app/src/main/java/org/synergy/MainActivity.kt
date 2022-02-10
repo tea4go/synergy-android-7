@@ -27,11 +27,13 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -45,6 +47,7 @@ import org.synergy.services.BarrierClientService.Companion.EXTRA_IP_ADDRESS
 import org.synergy.services.BarrierClientService.Companion.EXTRA_PORT
 import org.synergy.services.BarrierClientService.Companion.EXTRA_SCREEN_HEIGHT
 import org.synergy.services.BarrierClientService.Companion.EXTRA_SCREEN_WIDTH
+import org.synergy.ui.screens.home.HomeScreen
 import org.synergy.utils.AccessibilityUtils
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
@@ -53,7 +56,7 @@ import org.synergy.utils.DisplayUtils
 class MainActivity : ComponentActivity() {
     private var barrierClientServiceBound: Boolean = false
     private var barrierClientService: BarrierClientService? = null
-    private var barrierClientConnected: Boolean = false
+    private var barrierClientConnected by mutableStateOf(false)
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -65,7 +68,6 @@ class MainActivity : ComponentActivity() {
                 .apply {
                     addOnConnectionChangeListener {
                         barrierClientConnected = it
-                        updateConnectButton()
                     }
                 }
             barrierClientServiceBound = true
@@ -90,21 +92,14 @@ class MainActivity : ComponentActivity() {
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.main)
+        setContent {
+            HomeScreen(
+                barrierClientConnected = barrierClientConnected,
+                onConnectClick = this::connect,
+                disconnect = this::disconnect,
+            )
+        }
         createNotificationChannels()
-        val preferences = getPreferences(MODE_PRIVATE)
-        val clientName = preferences.getString(PROP_clientName, null)
-        if (clientName != null) {
-            findViewById<EditText>(R.id.clientNameEditText).setText(clientName)
-        }
-        val serverHost = preferences.getString(PROP_serverHost, null)
-        if (serverHost != null) {
-            findViewById<EditText>(R.id.serverHostEditText).setText(serverHost)
-        }
-
-        // TODO make sure we have the appropriate permissions for the accessibility services. Otherwise display error/open settings intent
-        val connectButton = findViewById<Button>(R.id.connectButton)
-        connectButton.setOnClickListener { connect() }
     }
 
     override fun onResume() {
@@ -112,6 +107,7 @@ class MainActivity : ComponentActivity() {
         // Keep checking for revoked permissions
         requestOverlayDrawingPermission()
         requestAccessibilityPermission()
+        bindToClientService(autoCreate = false)
     }
 
     override fun onDestroy() {
@@ -145,19 +141,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun connect() {
-        val clientName = findViewById<EditText>(R.id.clientNameEditText).text.toString()
-        val ipAddress = findViewById<EditText>(R.id.serverHostEditText).text.toString()
-        val portStr = findViewById<EditText>(R.id.serverPortEditText).text.toString()
-        val port = portStr.toInt()
-        val deviceName = findViewById<EditText>(R.id.inputDeviceEditText).text.toString()
-        val preferences = getPreferences(MODE_PRIVATE)
-        val preferencesEditor = preferences.edit()
-        preferencesEditor.putString(PROP_clientName, clientName)
-        preferencesEditor.putString(PROP_serverHost, ipAddress)
-        preferencesEditor.putString(PROP_deviceName, deviceName)
-        preferencesEditor.apply()
-
+    private fun connect(
+        clientName: String,
+        serverHost: String,
+        serverPort: Int,
+        deviceName: String,
+    ) {
         val displayBounds = DisplayUtils.getDisplayBounds(this)
         if (displayBounds == null) {
             Timber.e("displayBounds is null")
@@ -169,8 +158,8 @@ class MainActivity : ComponentActivity() {
             this,
             BarrierClientService::class.java,
         ).apply {
-            putExtra(EXTRA_IP_ADDRESS, ipAddress)
-            putExtra(EXTRA_PORT, port)
+            putExtra(EXTRA_IP_ADDRESS, serverHost)
+            putExtra(EXTRA_PORT, serverPort)
             putExtra(EXTRA_CLIENT_NAME, clientName)
             putExtra(EXTRA_SCREEN_WIDTH, displayBounds.width())
             putExtra(EXTRA_SCREEN_HEIGHT, displayBounds.height())
@@ -178,12 +167,16 @@ class MainActivity : ComponentActivity() {
 
         ContextCompat.startForegroundService(applicationContext, intent)
         if (!barrierClientServiceBound) {
-            bindService(
-                Intent(this, BarrierClientService::class.java),
-                serviceConnection,
-                BIND_AUTO_CREATE
-            )
+            bindToClientService()
         }
+    }
+
+    private fun bindToClientService(autoCreate: Boolean = true) {
+        bindService(
+            Intent(this, BarrierClientService::class.java),
+            serviceConnection,
+            if (autoCreate) BIND_AUTO_CREATE else 0
+        )
     }
 
     private fun disconnect() {
@@ -202,22 +195,5 @@ class MainActivity : ComponentActivity() {
         NotificationManagerCompat.from(applicationContext).run {
             createNotificationChannel(silentNotificationChannel)
         }
-    }
-
-    private fun updateConnectButton() = runOnUiThread {
-        val connectButton = findViewById<Button>(R.id.connectButton)
-        if (barrierClientConnected) {
-            connectButton.text = getString(R.string.disconnect)
-            connectButton.setOnClickListener { disconnect() }
-        } else {
-            connectButton.text = getString(R.string.connect)
-            connectButton.setOnClickListener { connect() }
-        }
-    }
-
-    companion object {
-        private const val PROP_clientName = "clientName"
-        private const val PROP_serverHost = "serverHost"
-        private const val PROP_deviceName = "deviceName"
     }
 }
