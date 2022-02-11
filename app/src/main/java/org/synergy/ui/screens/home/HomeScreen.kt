@@ -15,6 +15,7 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,10 +37,12 @@ import org.synergy.R
 import org.synergy.barrier.base.utils.Timber
 import org.synergy.barrier.base.utils.e
 import org.synergy.data.ServerConfig
+import org.synergy.services.BarrierAccessibilityService
 import org.synergy.services.BarrierClientService
 import org.synergy.ui.common.OnLifecycleEvent
 import org.synergy.ui.common.ServerConfigForm
 import org.synergy.ui.theme.BarrierClientTheme
+import org.synergy.utils.AccessibilityUtils
 import org.synergy.utils.DisplayUtils
 
 @Composable
@@ -52,11 +55,28 @@ fun HomeScreen(
 
     val overlayPermActivityLauncher = rememberLauncherForActivityResult(StartActivityForResult()) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)) {
+            viewModel.setHasOverlayDrawPermission(true)
             return@rememberLauncherForActivityResult
         }
         Toast.makeText(
             context,
             context.getString(R.string.overlay_permission_denied),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    val accessibilityPermLauncher = rememberLauncherForActivityResult(StartActivityForResult()) {
+        val enabled = AccessibilityUtils.isAccessibilityServiceEnabled(
+            context,
+            BarrierAccessibilityService::class.java
+        )
+        if (enabled) {
+            viewModel.setHasAccessibilityPermission(true)
+            return@rememberLauncherForActivityResult
+        }
+        Toast.makeText(
+            context,
+            context.getString(R.string.accessibility_permission_denied),
             Toast.LENGTH_SHORT
         ).show()
     }
@@ -95,6 +115,10 @@ fun HomeScreen(
                     )
                     viewModel.setRequestedOverlayDrawPermission(true)
                 }
+                if (!uiState.hasRequestedAccessibilityPermission && !uiState.hasAccessibilityPermission) {
+                    requestAccessibilityPermission(accessibilityPermLauncher)
+                    viewModel.setRequestedAccessibilityPermission(true)
+                }
             }
             Lifecycle.Event.ON_PAUSE -> {
                 context.unbindService(serviceConnection)
@@ -107,7 +131,7 @@ fun HomeScreen(
         modifier = Modifier.fillMaxHeight(),
         serverConfig = uiState.serverConfig,
         barrierClientConnected = uiState.barrierClientConnected,
-        hasPermissions = uiState.hasOverlayDrawPermission,
+        hasPermissions = uiState.hasOverlayDrawPermission && uiState.hasAccessibilityPermission,
         onServerConfigChange = { viewModel.updateServerConfig(it) },
         onConnectClick = {
             if (uiState.barrierClientConnected) {
@@ -185,7 +209,6 @@ private fun connect(
     val displayBounds = DisplayUtils.getDisplayBounds(context)
     if (displayBounds == null) {
         Timber.e("displayBounds is null")
-        // Toast.makeText(applicationContext, "displayBounds is null", Toast.LENGTH_LONG).show()
         return
     }
 
@@ -219,18 +242,19 @@ private fun bindToClientService(
     if (autoCreate) ComponentActivity.BIND_AUTO_CREATE else 0
 )
 
+@RequiresApi(Build.VERSION_CODES.M)
 private fun requestOverlayDrawingPermission(
     context: Context,
     overlayPermActivityLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
 ) {
     // TODO: Need to first show dialog to explain the request, and what the user has to do
-
-    // For pre-API 23, overlay drawing permission is granted by default
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
-        val intent = Intent(
-            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            Uri.parse("package:${context.packageName}")
-        )
-        overlayPermActivityLauncher.launch(intent)
-    }
+    val intent = Intent(
+        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+        Uri.parse("package:${context.packageName}")
+    )
+    overlayPermActivityLauncher.launch(intent)
 }
+
+private fun requestAccessibilityPermission(
+    accessibilityPermLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>
+) = accessibilityPermLauncher.launch(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))

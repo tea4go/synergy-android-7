@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import org.synergy.data.ServerConfig
+import org.synergy.services.BarrierAccessibilityService
+import org.synergy.utils.AccessibilityUtils
 
 class HomeScreenViewModel(application: Application) : AndroidViewModel(application) {
     private var preferences = application.getSharedPreferences(
@@ -38,9 +40,17 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
         _uiState.update {
+            // For pre-API 23, overlay drawing permission is granted by default
             val hasOverlayDrawPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
                     || Settings.canDrawOverlays(application)
-            it.copy(hasOverlayDrawPermission = hasOverlayDrawPermission)
+            val hasAccessibilityPermission = AccessibilityUtils.isAccessibilityServiceEnabled(
+                application,
+                BarrierAccessibilityService::class.java
+            )
+            it.copy(
+                hasOverlayDrawPermission = hasOverlayDrawPermission,
+                hasAccessibilityPermission = hasAccessibilityPermission,
+            )
         }
     }
 
@@ -71,6 +81,18 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(hasRequestedOverlayDrawPermission = requested) }
     }
 
+    fun setRequestedAccessibilityPermission(requested: Boolean) {
+        _uiState.update { it.copy(hasRequestedAccessibilityPermission = requested) }
+    }
+
+    fun setHasOverlayDrawPermission(hasPermission: Boolean) {
+        _uiState.update { it.copy(hasOverlayDrawPermission = hasPermission) }
+    }
+
+    fun setHasAccessibilityPermission(hasPermission: Boolean) {
+        _uiState.update { it.copy(hasAccessibilityPermission = hasPermission) }
+    }
+
     companion object {
         private const val PROP_clientName = "clientName"
         private const val PROP_serverHost = "serverHost"
@@ -83,6 +105,8 @@ data class UiState(
     val serverConfig: ServerConfig = ServerConfig(),
     val hasRequestedOverlayDrawPermission: Boolean = false,
     val hasOverlayDrawPermission: Boolean = false,
+    val hasRequestedAccessibilityPermission: Boolean = false,
+    val hasAccessibilityPermission: Boolean = false,
     val barrierClientServiceBound: Boolean = false,
     val barrierClientConnected: Boolean = false,
 )

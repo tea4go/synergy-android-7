@@ -19,21 +19,12 @@
  */
 package org.synergy
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
-import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.d
-import org.synergy.services.BarrierAccessibilityService
-import org.synergy.utils.AccessibilityUtils
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
 
@@ -45,25 +36,6 @@ class MainActivity : ComponentActivity() {
             MainContent()
         }
         createNotificationChannels()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Keep checking for revoked permissions
-        requestAccessibilityPermission()
-    }
-
-    private fun requestAccessibilityPermission() {
-        val enabled = AccessibilityUtils.isAccessibilityServiceEnabled(
-            this,
-            BarrierAccessibilityService::class.java
-        )
-        Timber.d("accessibility enabled: $enabled")
-        if (!enabled) {
-            // show dialog
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            startActivity(intent)
-        }
     }
 
     private fun createNotificationChannels() {
