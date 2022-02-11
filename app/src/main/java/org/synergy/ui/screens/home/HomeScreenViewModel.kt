@@ -52,6 +52,14 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
         preferencesEditor.apply()
     }
 
+    fun setBarrierClientServiceBound(bound: Boolean) {
+        _uiState.update { it.copy(barrierClientServiceBound = bound) }
+    }
+
+    fun setBarrierClientConnected(connected: Boolean) {
+        _uiState.update { it.copy(barrierClientConnected = connected) }
+    }
+
     companion object {
         private const val PROP_clientName = "clientName"
         private const val PROP_serverHost = "serverHost"
@@ -62,4 +70,6 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
 
 data class UiState(
     val serverConfig: ServerConfig = ServerConfig(),
+    val barrierClientServiceBound: Boolean = false,
+    val barrierClientConnected: Boolean = false,
 )

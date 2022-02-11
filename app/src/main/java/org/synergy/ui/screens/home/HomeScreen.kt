@@ -38,9 +38,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    var barrierClientServiceBound by remember { mutableStateOf(false) }
     var barrierClientService: BarrierClientService? by remember { mutableStateOf(null) }
-    var barrierClientConnected by remember { mutableStateOf(false) }
 
     val serviceConnection = remember {
         object : ServiceConnection {
@@ -50,17 +48,13 @@ fun HomeScreen(
                 }
                 service.service
                     .also { barrierClientService = it }
-                    .apply {
-                        addOnConnectionChangeListener {
-                            barrierClientConnected = it
-                        }
-                    }
-                barrierClientServiceBound = true
+                    .addOnConnectionChangeListener { viewModel.setBarrierClientConnected(it) }
+                viewModel.setBarrierClientServiceBound(true)
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
                 barrierClientService = null
-                barrierClientServiceBound = false
+                viewModel.setBarrierClientServiceBound(false)
             }
         }
     }
@@ -79,10 +73,10 @@ fun HomeScreen(
     HomeScreenContent(
         modifier = Modifier.fillMaxHeight(),
         serverConfig = uiState.serverConfig,
-        barrierClientConnected = barrierClientConnected,
+        barrierClientConnected = uiState.barrierClientConnected,
         onServerConfigChange = { viewModel.updateServerConfig(it) },
         onConnectClick = {
-            if (barrierClientConnected) {
+            if (uiState.barrierClientConnected) {
                 barrierClientService?.disconnect()
                 return@HomeScreenContent
             }
@@ -90,7 +84,7 @@ fun HomeScreen(
             uiState.serverConfig.run {
                 connect(
                     context = context,
-                    barrierClientServiceBound = barrierClientServiceBound,
+                    barrierClientServiceBound = uiState.barrierClientServiceBound,
                     serviceConnection = serviceConnection,
                     clientName = clientName,
                     serverHost = serverHost,
