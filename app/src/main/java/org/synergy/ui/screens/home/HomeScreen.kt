@@ -39,7 +39,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var barrierClientServiceBound by remember { mutableStateOf(false) }
-    var barrierClientService: BarrierClientService? = remember { null }
+    var barrierClientService: BarrierClientService? by remember { mutableStateOf(null) }
     var barrierClientConnected by remember { mutableStateOf(false) }
 
     val serviceConnection = remember {
