@@ -42,11 +42,19 @@ repositories {
 }
 
 dependencies {
-    implementation "androidx.core:core-ktx:$core_version"
-
-    // compose
+    // Activity
     implementation "androidx.activity:activity-compose:$activity_version"
+
+    // Compose
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.ui:ui-tooling:$compose_version"
+
+    // Core
+    implementation "androidx.core:core-ktx:$core_version"
+
+    // Lifecycle
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
+
+    // Navigation
+    implementation "androidx.navigation:navigation-compose:$nav_version"
 }

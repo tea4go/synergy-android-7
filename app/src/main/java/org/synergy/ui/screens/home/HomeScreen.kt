@@ -1,6 +1,12 @@
 package org.synergy.ui.screens.home
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.res.Configuration
+import android.os.IBinder
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,32 +15,66 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.synergy.R
+import org.synergy.barrier.base.utils.Timber
+import org.synergy.barrier.base.utils.e
 import org.synergy.data.ServerConfig
+import org.synergy.services.BarrierClientService
 import org.synergy.ui.common.ServerConfigForm
 import org.synergy.ui.theme.BarrierClientTheme
+import org.synergy.utils.DisplayUtils
 
 @Composable
 fun HomeScreen(
     viewModel: HomeScreenViewModel = viewModel(),
-    barrierClientConnected: Boolean = false,
-    onConnectClick: (
-        clientName: String,
-        serverHost: String,
-        serverPort: Int,
-        deviceName: String
-    ) -> Unit,
-    disconnect: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    var barrierClientServiceBound by remember { mutableStateOf(false) }
+    var barrierClientService: BarrierClientService? = remember { null }
+    var barrierClientConnected by remember { mutableStateOf(false) }
+
+    val serviceConnection = remember {
+        object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+                if (service !is BarrierClientService.LocalBinder) {
+                    return
+                }
+                service.service
+                    .also { barrierClientService = it }
+                    .apply {
+                        addOnConnectionChangeListener {
+                            barrierClientConnected = it
+                        }
+                    }
+                barrierClientServiceBound = true
+            }
+
+            override fun onServiceDisconnected(name: ComponentName?) {
+                barrierClientService = null
+                barrierClientServiceBound = false
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        bindToClientService(
+            context = context,
+            serviceConnection = serviceConnection,
+            autoCreate = false,
+        )
+        onDispose {
+            context.unbindService(serviceConnection)
+        }
+    }
 
     HomeScreenContent(
         modifier = Modifier.fillMaxHeight(),
@@ -43,16 +83,19 @@ fun HomeScreen(
         onServerConfigChange = { viewModel.updateServerConfig(it) },
         onConnectClick = {
             if (barrierClientConnected) {
-                disconnect()
+                barrierClientService?.disconnect()
                 return@HomeScreenContent
             }
             viewModel.saveServerConfig()
             uiState.serverConfig.run {
-                onConnectClick(
-                    clientName,
-                    serverHost,
-                    serverPortInt,
-                    inputDeviceName,
+                connect(
+                    context = context,
+                    barrierClientServiceBound = barrierClientServiceBound,
+                    serviceConnection = serviceConnection,
+                    clientName = clientName,
+                    serverHost = serverHost,
+                    serverPort = serverPortInt,
+                    // deviceName = inputDeviceName,
                 )
             }
         },
@@ -99,3 +142,49 @@ private fun PreviewHomeScreenContent() {
         }
     }
 }
+
+private fun connect(
+    context: Context,
+    barrierClientServiceBound: Boolean,
+    serviceConnection: ServiceConnection,
+    clientName: String,
+    serverHost: String,
+    serverPort: Int,
+    // deviceName: String,
+) {
+    val displayBounds = DisplayUtils.getDisplayBounds(context)
+    if (displayBounds == null) {
+        Timber.e("displayBounds is null")
+        // Toast.makeText(applicationContext, "displayBounds is null", Toast.LENGTH_LONG).show()
+        return
+    }
+
+    val intent = Intent(
+        context,
+        BarrierClientService::class.java,
+    ).apply {
+        putExtra(BarrierClientService.EXTRA_IP_ADDRESS, serverHost)
+        putExtra(BarrierClientService.EXTRA_PORT, serverPort)
+        putExtra(BarrierClientService.EXTRA_CLIENT_NAME, clientName)
+        putExtra(BarrierClientService.EXTRA_SCREEN_WIDTH, displayBounds.width())
+        putExtra(BarrierClientService.EXTRA_SCREEN_HEIGHT, displayBounds.height())
+    }
+
+    ContextCompat.startForegroundService(context.applicationContext, intent)
+    if (!barrierClientServiceBound) {
+        bindToClientService(
+            context = context,
+            serviceConnection = serviceConnection,
+        )
+    }
+}
+
+private fun bindToClientService(
+    context: Context,
+    serviceConnection: ServiceConnection,
+    autoCreate: Boolean = true,
+) = context.bindService(
+    Intent(context, BarrierClientService::class.java),
+    serviceConnection,
+    if (autoCreate) ComponentActivity.BIND_AUTO_CREATE else 0
+)
