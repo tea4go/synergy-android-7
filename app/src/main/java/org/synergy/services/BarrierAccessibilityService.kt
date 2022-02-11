@@ -19,6 +19,8 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.*
 import org.synergy.R
+import org.synergy.barrier.base.utils.Timber
+import org.synergy.barrier.base.utils.e
 import org.synergy.barrier.common.key.*
 import org.synergy.services.BarrierAccessibilityAction.*
 import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.NEXT
@@ -78,7 +80,11 @@ class BarrierAccessibilityService : AccessibilityService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!cursorView.isAttachedToWindow) {
-            windowManager.addView(cursorView, cursorLayout)
+            try {
+                windowManager.addView(cursorView, cursorLayout)
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
         }
         return START_STICKY
     }
@@ -97,7 +103,11 @@ class BarrierAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         super.onDestroy()
         if (cursorView.isAttachedToWindow) {
-            windowManager.removeView(cursorView)
+            try {
+                windowManager.removeView(cursorView)
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
         }
     }
 

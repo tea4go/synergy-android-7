@@ -2,6 +2,8 @@ package org.synergy.ui.screens.home
 
 import android.app.Application
 import android.content.Context.MODE_PRIVATE
+import android.os.Build
+import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +37,11 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
                 )
             }
         }
+        _uiState.update {
+            val hasOverlayDrawPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                    || Settings.canDrawOverlays(application)
+            it.copy(hasOverlayDrawPermission = hasOverlayDrawPermission)
+        }
     }
 
     fun updateServerConfig(serverConfig: ServerConfig) {
@@ -60,6 +67,10 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(barrierClientConnected = connected) }
     }
 
+    fun setRequestedOverlayDrawPermission(requested: Boolean) {
+        _uiState.update { it.copy(hasRequestedOverlayDrawPermission = requested) }
+    }
+
     companion object {
         private const val PROP_clientName = "clientName"
         private const val PROP_serverHost = "serverHost"
@@ -70,6 +81,8 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
 
 data class UiState(
     val serverConfig: ServerConfig = ServerConfig(),
+    val hasRequestedOverlayDrawPermission: Boolean = false,
+    val hasOverlayDrawPermission: Boolean = false,
     val barrierClientServiceBound: Boolean = false,
     val barrierClientConnected: Boolean = false,
 )

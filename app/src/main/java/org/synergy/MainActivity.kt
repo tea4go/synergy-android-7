@@ -38,16 +38,6 @@ import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
 
 class MainActivity : ComponentActivity() {
-    private val overlayPermActivityLauncher = registerForActivityResult(StartActivityForResult()) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
-            return@registerForActivityResult
-        }
-        Toast.makeText(
-            this,
-            getString(R.string.overlay_permission_denied),
-            Toast.LENGTH_SHORT
-        ).show()
-    }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,21 +50,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         // Keep checking for revoked permissions
-        requestOverlayDrawingPermission()
         requestAccessibilityPermission()
-    }
-
-    private fun requestOverlayDrawingPermission() {
-        // TODO: Need to first show dialog to explain the request, and what the user has to do
-
-        // For pre-API 23, overlay drawing permission is granted by default
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            overlayPermActivityLauncher.launch(intent)
-        }
     }
 
     private fun requestAccessibilityPermission() {
