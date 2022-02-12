@@ -12,6 +12,12 @@ android {
         applicationId "org.synergy"
         minSdkVersion 21
         targetSdkVersion 31
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
     }
 
     compileOptions {
@@ -63,4 +69,8 @@ dependencies {
 
     // Navigation
     implementation "androidx.navigation:navigation-compose:$nav_version"
+
+    // Room
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
 }
