@@ -19,5 +19,9 @@
     <string name="fix_it">Fix it</string>
     <string name="requires_accessibility_overlay_perms">Barrier client requires Accessibility enabled and also requires permission to draw over apps.</string>
     <string name="requires_accessibility_perm">Barrier client requires Accessibility enabled.</string>
-    <string name="requires_ovelay_perm">Barrier client requires permission to draw over apps.</string>
+    <string name="requires_overlay_perm">Barrier client requires permission to draw over apps.</string>
+    <string name="requires_overlay_perm_detail">Barrier client requires permission to draw over apps to show the mouse cursor.</string>
+    <string name="requires_accessibility_perm_detail">Barrier client requires Accessibility enabled to perform clicks and handle keyboard input.</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
 </resources>

@@ -39,19 +39,24 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
                 )
             }
         }
+        checkPermissions()
+    }
+
+    fun checkPermissions(): Pair<Boolean, Boolean> {
+        // For pre-API 23, overlay drawing permission is granted by default
+        val hasOverlayDrawPermission = (Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                || Settings.canDrawOverlays(getApplication()))
+        val hasAccessibilityPermission = AccessibilityUtils.isAccessibilityServiceEnabled(
+            getApplication(),
+            BarrierAccessibilityService::class.java
+        )
         _uiState.update {
-            // For pre-API 23, overlay drawing permission is granted by default
-            val hasOverlayDrawPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
-                    || Settings.canDrawOverlays(application)
-            val hasAccessibilityPermission = AccessibilityUtils.isAccessibilityServiceEnabled(
-                application,
-                BarrierAccessibilityService::class.java
-            )
             it.copy(
                 hasOverlayDrawPermission = hasOverlayDrawPermission,
                 hasAccessibilityPermission = hasAccessibilityPermission,
             )
         }
+        return Pair(hasOverlayDrawPermission, hasAccessibilityPermission)
     }
 
     fun updateServerConfig(serverConfig: ServerConfig) {
@@ -93,6 +98,14 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(hasAccessibilityPermission = hasPermission) }
     }
 
+    fun setShowOverlayDrawPermissionDialog(show: Boolean) {
+        _uiState.update { it.copy(showOverlayDrawPermissionDialog = show) }
+    }
+
+    fun setShowAccessibilityPermissionDialog(show: Boolean) {
+        _uiState.update { it.copy(showAccessibilityPermissionDialog = show) }
+    }
+
     companion object {
         private const val PROP_clientName = "clientName"
         private const val PROP_serverHost = "serverHost"
@@ -109,4 +122,6 @@ data class UiState(
     val hasAccessibilityPermission: Boolean = false,
     val barrierClientServiceBound: Boolean = false,
     val barrierClientConnected: Boolean = false,
+    val showOverlayDrawPermissionDialog: Boolean = false,
+    val showAccessibilityPermissionDialog: Boolean = false,
 )

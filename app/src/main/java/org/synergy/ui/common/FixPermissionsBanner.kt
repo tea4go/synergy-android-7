@@ -19,7 +19,7 @@ import org.synergy.ui.theme.BarrierClientTheme
 fun FixPermissionsBanner(
     modifier: Modifier = Modifier,
     text: @Composable RowScope.() -> Unit = {},
-    onLearnMoreClick: () -> Unit = {},
+    // onLearnMoreClick: () -> Unit = {},
     onFixClick: () -> Unit = {},
 ) {
     Column(
@@ -41,12 +41,12 @@ fun FixPermissionsBanner(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         ) {
-            TextButton(onClick = onLearnMoreClick) {
-                Text(
-                    text = stringResource(id = R.string.learn_more).uppercase(),
-                    style = MaterialTheme.typography.button,
-                )
-            }
+            // TextButton(onClick = onLearnMoreClick) {
+            //     Text(
+            //         text = stringResource(id = R.string.learn_more).uppercase(),
+            //         style = MaterialTheme.typography.button,
+            //     )
+            // }
             TextButton(onClick = onFixClick) {
                 Text(
                     text = stringResource(id = R.string.fix_it).uppercase(),

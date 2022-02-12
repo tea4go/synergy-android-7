@@ -15,7 +15,6 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,13 +33,11 @@ import org.synergy.R
 import org.synergy.barrier.base.utils.Timber
 import org.synergy.barrier.base.utils.e
 import org.synergy.data.ServerConfig
-import org.synergy.services.BarrierAccessibilityService
 import org.synergy.services.BarrierClientService
 import org.synergy.ui.common.FixPermissionsBanner
 import org.synergy.ui.common.OnLifecycleEvent
 import org.synergy.ui.common.ServerConfigForm
 import org.synergy.ui.theme.BarrierClientTheme
-import org.synergy.utils.AccessibilityUtils
 import org.synergy.utils.DisplayUtils
 
 @Composable
@@ -51,9 +48,20 @@ fun HomeScreen(
     val context = LocalContext.current
     var barrierClientService: BarrierClientService? by remember { mutableStateOf(null) }
 
+    fun showPermissionDialog(force: Boolean = false) {
+        if ((force || !uiState.hasRequestedOverlayDrawPermission) && !uiState.hasOverlayDrawPermission) {
+            viewModel.setShowOverlayDrawPermissionDialog(true)
+            return
+        }
+        if ((force || !uiState.hasRequestedAccessibilityPermission) && !uiState.hasAccessibilityPermission) {
+            viewModel.setShowAccessibilityPermissionDialog(true)
+        }
+    }
+
     val overlayPermActivityLauncher = rememberLauncherForActivityResult(StartActivityForResult()) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)) {
-            viewModel.setHasOverlayDrawPermission(true)
+        // refresh permission status in viewmodel
+        val (hasOverlayDrawPermission, _) = viewModel.checkPermissions()
+        if (hasOverlayDrawPermission) {
             return@rememberLauncherForActivityResult
         }
         Toast.makeText(
@@ -64,12 +72,9 @@ fun HomeScreen(
     }
 
     val accessibilityPermLauncher = rememberLauncherForActivityResult(StartActivityForResult()) {
-        val enabled = AccessibilityUtils.isAccessibilityServiceEnabled(
-            context,
-            BarrierAccessibilityService::class.java
-        )
-        if (enabled) {
-            viewModel.setHasAccessibilityPermission(true)
+        // refresh permission status in viewmodel
+        val (_, hasAccessibilityPermission) = viewModel.checkPermissions()
+        if (hasAccessibilityPermission) {
             return@rememberLauncherForActivityResult
         }
         Toast.makeText(
@@ -106,17 +111,8 @@ fun HomeScreen(
                     serviceConnection = serviceConnection,
                     autoCreate = false,
                 )
-                if (!uiState.hasRequestedOverlayDrawPermission && !uiState.hasOverlayDrawPermission) {
-                    requestOverlayDrawingPermission(
-                        context,
-                        overlayPermActivityLauncher,
-                    )
-                    viewModel.setRequestedOverlayDrawPermission(true)
-                }
-                if (!uiState.hasRequestedAccessibilityPermission && !uiState.hasAccessibilityPermission) {
-                    requestAccessibilityPermission(accessibilityPermLauncher)
-                    viewModel.setRequestedAccessibilityPermission(true)
-                }
+                // show permission dialog if required
+                showPermissionDialog()
             }
             Lifecycle.Event.ON_PAUSE -> {
                 context.unbindService(serviceConnection)
@@ -131,6 +127,8 @@ fun HomeScreen(
         barrierClientConnected = uiState.barrierClientConnected,
         hasOverlayDrawPermission = uiState.hasOverlayDrawPermission,
         hasAccessibilityPermission = uiState.hasAccessibilityPermission,
+        showOverlayDrawPermissionDialog = uiState.showOverlayDrawPermissionDialog,
+        showAccessibilityPermissionDialog = uiState.showAccessibilityPermissionDialog,
         onServerConfigChange = { viewModel.updateServerConfig(it) },
         onConnectClick = {
             if (uiState.barrierClientConnected) {
@@ -150,8 +148,29 @@ fun HomeScreen(
                 )
             }
         },
-        onFixPermissionsClick = {},
-        onPermissionsLearnMoreClick = {},
+        onFixPermissionsClick = { showPermissionDialog(true) },
+        // onPermissionsLearnMoreClick = {},
+        onAcceptPermissionClick = {
+            if (uiState.showOverlayDrawPermissionDialog) {
+                requestOverlayDrawingPermission(
+                    context,
+                    overlayPermActivityLauncher,
+                )
+                viewModel.setRequestedOverlayDrawPermission(true)
+                viewModel.setShowOverlayDrawPermissionDialog(false)
+                return@HomeScreenContent
+            }
+            requestAccessibilityPermission(accessibilityPermLauncher)
+            viewModel.setRequestedAccessibilityPermission(true)
+            viewModel.setShowAccessibilityPermissionDialog(false)
+        },
+        onDismissPermissionDialog = {
+            if (uiState.showOverlayDrawPermissionDialog) {
+                viewModel.setShowOverlayDrawPermissionDialog(false)
+                return@HomeScreenContent
+            }
+            viewModel.setShowAccessibilityPermissionDialog(false)
+        }
     )
 }
 
@@ -162,10 +181,14 @@ private fun HomeScreenContent(
     barrierClientConnected: Boolean = false,
     hasOverlayDrawPermission: Boolean = false,
     hasAccessibilityPermission: Boolean = false,
+    showOverlayDrawPermissionDialog: Boolean = false,
+    showAccessibilityPermissionDialog: Boolean = false,
     onServerConfigChange: (ServerConfig) -> Unit = {},
     onConnectClick: () -> Unit = {},
     onFixPermissionsClick: () -> Unit = {},
-    onPermissionsLearnMoreClick: () -> Unit = {},
+    // onPermissionsLearnMoreClick: () -> Unit = {},
+    onAcceptPermissionClick: () -> Unit = {},
+    onDismissPermissionDialog: () -> Unit = {},
 ) {
     val hasPermissions = hasOverlayDrawPermission && hasAccessibilityPermission
 
@@ -175,7 +198,7 @@ private fun HomeScreenContent(
                 hasAccessibilityPermission = hasAccessibilityPermission,
                 hasOverlayDrawPermission = hasOverlayDrawPermission,
                 onFixClick = onFixPermissionsClick,
-                onLearnMoreClick = onPermissionsLearnMoreClick,
+                // onLearnMoreClick = onPermissionsLearnMoreClick,
             )
         }
         Column(
@@ -200,6 +223,38 @@ private fun HomeScreenContent(
             }
         }
     }
+
+    if (showOverlayDrawPermissionDialog || showAccessibilityPermissionDialog) {
+        AlertDialog(
+            text = {
+                Text(
+                    text = stringResource(
+                        when {
+                            showOverlayDrawPermissionDialog -> R.string.requires_overlay_perm_detail
+                            else -> R.string.requires_accessibility_perm_detail
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onAcceptPermissionClick) {
+                    Text(
+                        text = stringResource(R.string.ok).uppercase(),
+                        style = MaterialTheme.typography.button,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissPermissionDialog) {
+                    Text(
+                        text = stringResource(R.string.cancel).uppercase(),
+                        style = MaterialTheme.typography.button,
+                    )
+                }
+            },
+            onDismissRequest = onDismissPermissionDialog,
+        )
+    }
 }
 
 @Composable
@@ -208,7 +263,7 @@ private fun PermissionsBanner(
     hasAccessibilityPermission: Boolean,
     hasOverlayDrawPermission: Boolean,
     onFixClick: () -> Unit,
-    onLearnMoreClick: () -> Unit,
+    // onLearnMoreClick: () -> Unit,
 ) {
     FixPermissionsBanner(
         modifier = modifier,
@@ -218,13 +273,13 @@ private fun PermissionsBanner(
                     when {
                         !hasAccessibilityPermission && !hasOverlayDrawPermission -> R.string.requires_accessibility_overlay_perms
                         !hasAccessibilityPermission -> R.string.requires_accessibility_perm
-                        else -> R.string.requires_ovelay_perm
+                        else -> R.string.requires_overlay_perm
                     }
                 )
             )
         },
         onFixClick = onFixClick,
-        onLearnMoreClick = onLearnMoreClick,
+        // onLearnMoreClick = onLearnMoreClick,
     )
     Divider()
 }
@@ -285,12 +340,11 @@ private fun bindToClientService(
     if (autoCreate) ComponentActivity.BIND_AUTO_CREATE else 0
 )
 
-@RequiresApi(Build.VERSION_CODES.M)
 private fun requestOverlayDrawingPermission(
     context: Context,
     overlayPermActivityLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
 ) {
-    // TODO: Need to first show dialog to explain the request, and what the user has to do
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
     val intent = Intent(
         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
         Uri.parse("package:${context.packageName}")
