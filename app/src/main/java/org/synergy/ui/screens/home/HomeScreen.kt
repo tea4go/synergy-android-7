@@ -20,10 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +36,7 @@ import org.synergy.barrier.base.utils.e
 import org.synergy.data.ServerConfig
 import org.synergy.services.BarrierAccessibilityService
 import org.synergy.services.BarrierClientService
+import org.synergy.ui.common.FixPermissionsBanner
 import org.synergy.ui.common.OnLifecycleEvent
 import org.synergy.ui.common.ServerConfigForm
 import org.synergy.ui.theme.BarrierClientTheme
@@ -131,7 +129,8 @@ fun HomeScreen(
         modifier = Modifier.fillMaxHeight(),
         serverConfig = uiState.serverConfig,
         barrierClientConnected = uiState.barrierClientConnected,
-        hasPermissions = uiState.hasOverlayDrawPermission && uiState.hasAccessibilityPermission,
+        hasOverlayDrawPermission = uiState.hasOverlayDrawPermission,
+        hasAccessibilityPermission = uiState.hasAccessibilityPermission,
         onServerConfigChange = { viewModel.updateServerConfig(it) },
         onConnectClick = {
             if (uiState.barrierClientConnected) {
@@ -151,6 +150,8 @@ fun HomeScreen(
                 )
             }
         },
+        onFixPermissionsClick = {},
+        onPermissionsLearnMoreClick = {},
     )
 }
 
@@ -159,31 +160,73 @@ private fun HomeScreenContent(
     modifier: Modifier = Modifier,
     serverConfig: ServerConfig = ServerConfig(),
     barrierClientConnected: Boolean = false,
-    hasPermissions: Boolean = false,
+    hasOverlayDrawPermission: Boolean = false,
+    hasAccessibilityPermission: Boolean = false,
     onServerConfigChange: (ServerConfig) -> Unit = {},
     onConnectClick: () -> Unit = {},
+    onFixPermissionsClick: () -> Unit = {},
+    onPermissionsLearnMoreClick: () -> Unit = {},
 ) {
-    Column(
-        modifier = modifier.padding(16.dp),
-    ) {
-        ServerConfigForm(
-            modifier = Modifier.weight(1f),
-            serverConfig = serverConfig,
-            onChange = onServerConfigChange,
-        )
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            enabled = if (barrierClientConnected) true else hasPermissions,
-            onClick = onConnectClick,
-        ) {
-            Text(
-                style = MaterialTheme.typography.button,
-                text = stringResource(
-                    id = if (barrierClientConnected) R.string.disconnect else R.string.connect
-                ).uppercase()
+    val hasPermissions = hasOverlayDrawPermission && hasAccessibilityPermission
+
+    Column {
+        if (!hasPermissions) {
+            PermissionsBanner(
+                hasAccessibilityPermission = hasAccessibilityPermission,
+                hasOverlayDrawPermission = hasOverlayDrawPermission,
+                onFixClick = onFixPermissionsClick,
+                onLearnMoreClick = onPermissionsLearnMoreClick,
             )
         }
+        Column(
+            modifier = modifier.padding(16.dp),
+        ) {
+            ServerConfigForm(
+                modifier = Modifier.weight(1f),
+                serverConfig = serverConfig,
+                onChange = onServerConfigChange,
+            )
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = if (barrierClientConnected) true else hasPermissions,
+                onClick = onConnectClick,
+            ) {
+                Text(
+                    style = MaterialTheme.typography.button,
+                    text = stringResource(
+                        id = if (barrierClientConnected) R.string.disconnect else R.string.connect
+                    ).uppercase()
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun PermissionsBanner(
+    modifier: Modifier = Modifier,
+    hasAccessibilityPermission: Boolean,
+    hasOverlayDrawPermission: Boolean,
+    onFixClick: () -> Unit,
+    onLearnMoreClick: () -> Unit,
+) {
+    FixPermissionsBanner(
+        modifier = modifier,
+        text = {
+            Text(
+                text = stringResource(
+                    when {
+                        !hasAccessibilityPermission && !hasOverlayDrawPermission -> R.string.requires_accessibility_overlay_perms
+                        !hasAccessibilityPermission -> R.string.requires_accessibility_perm
+                        else -> R.string.requires_ovelay_perm
+                    }
+                )
+            )
+        },
+        onFixClick = onFixClick,
+        onLearnMoreClick = onLearnMoreClick,
+    )
+    Divider()
 }
 
 @Preview
