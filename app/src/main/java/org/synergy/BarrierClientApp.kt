@@ -1,11 +1,12 @@
 package org.synergy
 
 import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
 import org.synergy.barrier.base.utils.BarrierDebugTree
 import org.synergy.barrier.base.utils.Log
 import org.synergy.barrier.base.utils.Timber
 
-@Suppress("unused")
+@HiltAndroidApp
 class BarrierClientApp : Application() {
     override fun onCreate() {
         super.onCreate()
