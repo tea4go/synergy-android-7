@@ -25,8 +25,11 @@ import org.synergy.barrier.base.utils.Log.Companion.debug
 import org.synergy.barrier.base.utils.Log.Companion.debug5
 import org.synergy.barrier.base.utils.Log.Companion.note
 import java.util.*
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class EventQueue : EventQueueInterface {
+@Singleton
+class EventQueue @Inject constructor() : EventQueueInterface {
     // buffer of events
     private var buffer: EventQueueBuffer? = SimpleEventQueueBuffer()
 
