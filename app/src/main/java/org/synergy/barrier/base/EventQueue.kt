@@ -26,7 +26,7 @@ import org.synergy.barrier.base.utils.Log.Companion.debug5
 import org.synergy.barrier.base.utils.Log.Companion.note
 import java.util.*
 
-class EventQueue private constructor() : EventQueueInterface {
+class EventQueue : EventQueueInterface {
     // buffer of events
     private var buffer: EventQueueBuffer? = SimpleEventQueueBuffer()
 
@@ -206,15 +206,8 @@ class EventQueue private constructor() : EventQueueInterface {
     companion object {
         private val TAG = EventQueue::class.simpleName
 
-        @Volatile
-        private var instance: EventQueue? = null
-
-        fun getInstance(): EventQueue = instance ?: synchronized(this) {
-            EventQueue().also { instance = it }
-        }
-
-        private fun interrupt() {
-            // TODO: Todo?
-        }
+        // private fun interrupt() {
+        //     // TODO: Todo?
+        // }
     }
 }

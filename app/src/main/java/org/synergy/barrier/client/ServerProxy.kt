@@ -35,7 +35,11 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
 
-class ServerProxy(private val client: Client, private val stream: Stream) {
+class ServerProxy(
+    private val client: Client,
+    private val stream: Stream,
+    eventQueue: EventQueue,
+) {
     private var seqNum = 0
     private var parser: Parser = Parser { parseHandshakeMessage() }
     private var keepAliveAlarm = 0.0
@@ -50,7 +54,7 @@ class ServerProxy(private val client: Client, private val stream: Stream) {
 
     init {
         // handle data on stream
-        EventQueue.getInstance().adoptHandler(
+        eventQueue.adoptHandler(
             EventType.STREAM_INPUT_READY,
             stream.getEventTarget()
         ) { handleData() }

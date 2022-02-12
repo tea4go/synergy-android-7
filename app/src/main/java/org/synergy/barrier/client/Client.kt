@@ -47,6 +47,7 @@ class Client(
     private val socketFactory: SocketFactoryInterface,
     // private val streamFilterFactory: StreamFilterFactoryInterface?,
     private val screen: ScreenInterface,
+    private val eventQueue: EventQueue,
     private val connectionChangeListener: (Boolean) -> Unit,
 ) : EventTarget {
     private var stream: Stream? = null
@@ -103,23 +104,23 @@ class Client(
     }
 
     private fun setupConnecting() = stream?.run {
-        EventQueue.getInstance().adoptHandler(
+        eventQueue.adoptHandler(
             EventType.SOCKET_CONNECTED,
             getEventTarget(),
         ) { handleConnected() }
         // val job = EventQueue.getInstance().getHandler(EventType.SOCKET_CONNECTED, it.eventTarget)
-        EventQueue.getInstance().adoptHandler(
+        eventQueue.adoptHandler(
             EventType.SOCKET_CONNECT_FAILED,
             getEventTarget(),
         ) { handleConnectionFailed() }
     }
 
     private fun cleanupConnecting() = stream?.run {
-        EventQueue.getInstance().removeHandler(
+        eventQueue.removeHandler(
             EventType.SOCKET_CONNECTED,
             getEventTarget(),
         )
-        EventQueue.getInstance().removeHandler(
+        eventQueue.removeHandler(
             EventType.SOCKET_CONNECT_FAILED,
             getEventTarget(),
         )
@@ -169,7 +170,7 @@ class Client(
             //  one
             if (isReady()) {
                 // TODO, So far this event does nothing -- I think
-                EventQueue.getInstance().addEvent(
+                eventQueue.addEvent(
                     Event(
                         EventType.STREAM_INPUT_READY,
                         getEventTarget()
@@ -182,31 +183,31 @@ class Client(
     }
 
     private fun setupConnection() = stream?.run {
-        EventQueue.getInstance().adoptHandler(
+        eventQueue.adoptHandler(
             EventType.SOCKET_DISCONNECTED,
             getEventTarget()
         ) { handleDisconnected() }
-        EventQueue.getInstance().adoptHandler(
+        eventQueue.adoptHandler(
             EventType.STREAM_INPUT_READY,
             getEventTarget()
         ) { handleHello() }
-        EventQueue.getInstance().adoptHandler(
+        eventQueue.adoptHandler(
             EventType.STREAM_OUTPUT_ERROR,
             getEventTarget()
         ) { handleDisconnected() }
-        EventQueue.getInstance().adoptHandler(
+        eventQueue.adoptHandler(
             EventType.STREAM_INPUT_SHUTDOWN,
             getEventTarget()
         ) { handleDisconnected() }
-        EventQueue.getInstance().adoptHandler(
+        eventQueue.adoptHandler(
             EventType.STREAM_OUTPUT_SHUTDOWN,
             getEventTarget()
         ) { handleDisconnected() }
     }
 
     private fun setupScreen() = stream?.run {
-        server = ServerProxy(this@Client, this)
-        EventQueue.getInstance().adoptHandler(
+        server = ServerProxy(this@Client, this, eventQueue)
+        eventQueue.adoptHandler(
             EventType.SHAPE_CHANGED,
             this@Client.eventTarget
         ) { handleShapeChanged() }
@@ -240,7 +241,7 @@ class Client(
     }
 
     private fun sendEvent(type: EventType, data: Any?) {
-        EventQueue.getInstance().addEvent(Event(type, data))
+        eventQueue.addEvent(Event(type, data))
     }
 
     private fun sendConnectionFailedEvent(msg: String) {

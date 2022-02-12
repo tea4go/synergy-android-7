@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import org.synergy.MainActivity
 import org.synergy.R
@@ -20,9 +21,12 @@ import org.synergy.barrier.net.SocketFactoryInterface
 import org.synergy.barrier.net.TCPSocketFactory
 import org.synergy.utils.Constants.BARRIER_CLIENT_SERVICE_ONGOING_NOTIFICATION_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
+import javax.inject.Inject
 
-
+@AndroidEntryPoint
 class BarrierClientService : Service() {
+    @Inject
+    lateinit var eventQueue: EventQueue
 
     private var client: Client? = null
     private val binder: IBinder = LocalBinder()
@@ -102,7 +106,7 @@ class BarrierClientService : Service() {
         screenWidth: Int,
         screenHeight: Int,
     ) {
-        val socketFactory: SocketFactoryInterface = TCPSocketFactory()
+        val socketFactory: SocketFactoryInterface = TCPSocketFactory(eventQueue)
         val serverAddress = NetworkAddress(ipAddress, port)
 
         val basicScreen = BasicScreen(this)
@@ -114,7 +118,8 @@ class BarrierClientService : Service() {
             serverAddress,
             socketFactory,
             // null,
-            basicScreen
+            basicScreen,
+            eventQueue,
         ) { connected ->
             onConnectionChangeListeners.forEach { it(connected) }
             if (connected) {
@@ -139,7 +144,6 @@ class BarrierClientService : Service() {
     }
 
     private fun startEventQueue() {
-        val eventQueue = EventQueue.getInstance()
         var event = eventQueue.getEvent(-1.0) ?: return
         while (event.type != EventType.QUIT) {
             eventQueue.dispatchEvent(event)

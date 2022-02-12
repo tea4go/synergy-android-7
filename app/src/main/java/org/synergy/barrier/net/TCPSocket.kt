@@ -28,7 +28,7 @@ import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.net.Socket
 
-class TCPSocket : DataSocketInterface {
+class TCPSocket(private val eventQueue: EventQueue) : DataSocketInterface {
     private val socket = Socket()
     private var connected = false
     private var readable = false
@@ -76,7 +76,7 @@ class TCPSocket : DataSocketInterface {
     override fun getEventTarget() = this
 
     private fun sendEvent(eventType: EventType) {
-        EventQueue.getInstance().addEvent(Event(eventType, getEventTarget(), null))
+        eventQueue.addEvent(Event(eventType, getEventTarget(), null))
     }
 
     companion object {

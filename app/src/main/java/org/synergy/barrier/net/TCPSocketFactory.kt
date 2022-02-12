@@ -19,8 +19,10 @@
  */
 package org.synergy.barrier.net
 
-class TCPSocketFactory : SocketFactoryInterface {
-    override fun create() = TCPSocket()
+import org.synergy.barrier.base.EventQueue
+
+class TCPSocketFactory(private val eventQueue: EventQueue) : SocketFactoryInterface {
+    override fun create() = TCPSocket(eventQueue)
 
     override fun createListen() = TCPListenSocket()
 }
