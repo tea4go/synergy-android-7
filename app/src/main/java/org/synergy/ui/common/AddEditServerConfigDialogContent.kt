@@ -53,7 +53,7 @@ fun AddEditServerConfigDialogContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Add New Server",
+                text = stringResource(id = if (serverConfig == null) R.string.add_new_server else R.string.edit_server),
                 style = MaterialTheme.typography.h6,
             )
             ServerConfigForm(

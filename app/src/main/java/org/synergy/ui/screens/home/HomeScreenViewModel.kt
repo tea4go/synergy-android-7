@@ -6,7 +6,6 @@ import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -43,7 +42,7 @@ class HomeScreenViewModel @Inject constructor(
     fun checkPermissions(): Pair<Boolean, Boolean> {
         // For pre-API 23, overlay drawing permission is granted by default
         val hasOverlayDrawPermission = (Build.VERSION.SDK_INT < Build.VERSION_CODES.M
-                || Settings.canDrawOverlays(getApplication()))
+            || Settings.canDrawOverlays(getApplication()))
         val hasAccessibilityPermission = AccessibilityUtils.isAccessibilityServiceEnabled(
             getApplication(),
             BarrierAccessibilityService::class.java
@@ -85,8 +84,13 @@ class HomeScreenViewModel @Inject constructor(
         _uiState.update { it.copy(selectedConfigId = serverConfig.id) }
     }
 
-    fun setShowAddServerConfigDialog(show: Boolean) {
-        _uiState.update { it.copy(showAddServerConfigDialog = show) }
+    fun setShowAddServerConfigDialog(show: Boolean, editConfig: ServerConfig? = null) {
+        _uiState.update {
+            it.copy(
+                showAddServerConfigDialog = show,
+                editServerConfig = editConfig,
+            )
+        }
     }
 
     fun saveServerConfig(serverConfig: ServerConfig) {
@@ -108,4 +112,5 @@ data class UiState(
     val showOverlayDrawPermissionDialog: Boolean = false,
     val showAccessibilityPermissionDialog: Boolean = false,
     val showAddServerConfigDialog: Boolean = false,
+    val editServerConfig: ServerConfig? = null,
 )

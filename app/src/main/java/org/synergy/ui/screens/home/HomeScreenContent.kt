@@ -8,6 +8,9 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -35,6 +38,7 @@ fun HomeScreenContent(
     showOverlayDrawPermissionDialog: Boolean = false,
     showAccessibilityPermissionDialog: Boolean = false,
     showAddServerConfigDialog: Boolean = false,
+    editServerConfig: ServerConfig? = null,
     onServerConfigSelectionChange: (ServerConfig) -> Unit = {},
     onConnectClick: () -> Unit = {},
     onFixPermissionsClick: () -> Unit = {},
@@ -43,8 +47,14 @@ fun HomeScreenContent(
     onAddServerConfigClick: () -> Unit = {},
     onSaveServerConfig: (ServerConfig) -> Unit = {},
     onDismissAddServerConfigDialog: () -> Unit = {},
+    onEditServerConfigClick: (ServerConfig) -> Unit = {},
 ) {
-    val hasPermissions = hasOverlayDrawPermission && hasAccessibilityPermission
+    val hasPermissions by remember(hasOverlayDrawPermission, hasAccessibilityPermission) {
+        derivedStateOf { hasOverlayDrawPermission && hasAccessibilityPermission }
+    }
+    val selectedConfig by remember(serverConfigs, selectedConfigId) {
+        derivedStateOf { serverConfigs.find { it.id == selectedConfigId } }
+    }
 
     Column {
         if (!hasPermissions) {
@@ -86,11 +96,11 @@ fun HomeScreenContent(
                     onAddServerConfigClick = onAddServerConfigClick,
                 )
             }
-            if (selectedConfigId != null) {
+            selectedConfig?.let {
                 Spacer(modifier = Modifier.requiredHeight(16.dp))
                 ServerConfigDetail(
-                    serverConfig = serverConfigs
-                        .find { it.id == selectedConfigId } ?: ServerConfig()
+                    serverConfig = it,
+                    onEditClick = { onEditServerConfigClick(it) },
                 )
             }
         }
@@ -146,6 +156,7 @@ fun HomeScreenContent(
     if (showAddServerConfigDialog) {
         Dialog(onDismissRequest = onDismissAddServerConfigDialog) {
             AddEditServerConfigDialogContent(
+                serverConfig = editServerConfig,
                 onSaveClick = onSaveServerConfig,
                 onCancelClick = onDismissAddServerConfigDialog,
             )

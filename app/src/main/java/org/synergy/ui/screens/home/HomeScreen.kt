@@ -119,6 +119,7 @@ fun HomeScreen(
         showOverlayDrawPermissionDialog = uiState.showOverlayDrawPermissionDialog,
         showAccessibilityPermissionDialog = uiState.showAccessibilityPermissionDialog,
         showAddServerConfigDialog = uiState.showAddServerConfigDialog,
+        editServerConfig = uiState.editServerConfig,
         onServerConfigSelectionChange = viewModel::setSelectedConfig,
         onConnectClick = {
             if (uiState.barrierClientConnected) {
@@ -164,7 +165,8 @@ fun HomeScreen(
             viewModel.saveServerConfig(it)
             viewModel.setShowAddServerConfigDialog(false)
         },
-        onDismissAddServerConfigDialog = { viewModel.setShowAddServerConfigDialog(false) }
+        onDismissAddServerConfigDialog = { viewModel.setShowAddServerConfigDialog(false) },
+        onEditServerConfigClick = { viewModel.setShowAddServerConfigDialog(true, it) },
     )
 }
 

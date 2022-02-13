@@ -29,4 +29,6 @@
     <string name="update">Update</string>
     <string name="name">Name</string>
     <string name="server">Server</string>
+    <string name="add_new_server">Add New Server</string>
+    <string name="edit_server">Edit server</string>
 </resources>
