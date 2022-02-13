@@ -1,36 +1,48 @@
 package org.synergy.ui.screens.home
 
 import android.content.res.Configuration
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import org.synergy.R
 import org.synergy.data.db.entities.ServerConfig
+import org.synergy.ui.common.AddEditServerConfigDialogContent
 import org.synergy.ui.common.FixPermissionsBanner
-import org.synergy.ui.common.ServerConfigForm
+import org.synergy.ui.common.ServerConfigDetail
+import org.synergy.ui.common.ServerConfigDropdown
 import org.synergy.ui.theme.BarrierClientTheme
+import org.synergy.utils.ServerConfigListPreviewParameterProvider
 
 @Composable
 fun HomeScreenContent(
     modifier: Modifier = Modifier,
-    serverConfig: ServerConfig = ServerConfig(),
+    serverConfigs: List<ServerConfig> = emptyList(),
+    selectedConfigId: Long? = null,
     barrierClientConnected: Boolean = false,
     hasOverlayDrawPermission: Boolean = false,
     hasAccessibilityPermission: Boolean = false,
     showOverlayDrawPermissionDialog: Boolean = false,
     showAccessibilityPermissionDialog: Boolean = false,
-    onServerConfigChange: (ServerConfig) -> Unit = {},
+    showAddServerConfigDialog: Boolean = false,
+    onServerConfigSelectionChange: (ServerConfig) -> Unit = {},
     onConnectClick: () -> Unit = {},
     onFixPermissionsClick: () -> Unit = {},
-    // onPermissionsLearnMoreClick: () -> Unit = {},
     onAcceptPermissionClick: () -> Unit = {},
     onDismissPermissionDialog: () -> Unit = {},
+    onAddServerConfigClick: () -> Unit = {},
+    onSaveServerConfig: (ServerConfig) -> Unit = {},
+    onDismissAddServerConfigDialog: () -> Unit = {},
 ) {
     val hasPermissions = hasOverlayDrawPermission && hasAccessibilityPermission
 
@@ -44,15 +56,49 @@ fun HomeScreenContent(
             )
         }
         Column(
-            modifier = modifier.padding(16.dp),
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .weight(1f)
+                .verticalScroll(state = rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = if (serverConfigs.isEmpty()) Arrangement.Center else Arrangement.Top,
         ) {
-            ServerConfigForm(
-                modifier = Modifier.weight(1f),
-                serverConfig = serverConfig,
-                onChange = onServerConfigChange,
-            )
+            if (serverConfigs.isEmpty()) {
+                OutlinedButton(
+                    onClick = onAddServerConfigClick,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "add"
+                    )
+                    Spacer(modifier = Modifier.requiredWidth(12.dp))
+                    Text(
+                        text = stringResource(id = R.string.add_server).uppercase(),
+                        style = MaterialTheme.typography.button,
+                    )
+                }
+            } else {
+                ServerConfigDropdown(
+                    serverConfigs = serverConfigs,
+                    selectedConfigId = selectedConfigId,
+                    onChange = onServerConfigSelectionChange,
+                    onAddServerConfigClick = onAddServerConfigClick,
+                )
+            }
+            if (selectedConfigId != null) {
+                Spacer(modifier = Modifier.requiredHeight(16.dp))
+                ServerConfigDetail(
+                    serverConfig = serverConfigs
+                        .find { it.id == selectedConfigId } ?: ServerConfig()
+                )
+            }
+        }
+        if (selectedConfigId != null) {
             Button(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 enabled = if (barrierClientConnected) true else hasPermissions,
                 onClick = onConnectClick,
             ) {
@@ -97,6 +143,14 @@ fun HomeScreenContent(
             onDismissRequest = onDismissPermissionDialog,
         )
     }
+    if (showAddServerConfigDialog) {
+        Dialog(onDismissRequest = onDismissAddServerConfigDialog) {
+            AddEditServerConfigDialogContent(
+                onSaveClick = onSaveServerConfig,
+                onCancelClick = onDismissAddServerConfigDialog,
+            )
+        }
+    }
 }
 
 @Composable
@@ -121,7 +175,6 @@ private fun PermissionsBanner(
             )
         },
         onFixClick = onFixClick,
-        // onLearnMoreClick = onLearnMoreClick,
     )
     Divider()
 }
@@ -129,10 +182,15 @@ private fun PermissionsBanner(
 @Preview
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun PreviewHomeScreenContent() {
+private fun PreviewHomeScreenContent(
+    @PreviewParameter(ServerConfigListPreviewParameterProvider::class) serverConfigs: List<ServerConfig>,
+) {
     BarrierClientTheme {
         Surface {
-            HomeScreenContent()
+            HomeScreenContent(
+                serverConfigs = serverConfigs,
+                selectedConfigId = serverConfigs.randomOrNull()?.id,
+            )
         }
     }
 }

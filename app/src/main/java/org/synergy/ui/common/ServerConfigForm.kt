@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import org.synergy.R
 import org.synergy.data.db.entities.ServerConfig
 import org.synergy.ui.theme.BarrierClientTheme
+import org.synergy.utils.ServerConfigPreviewParameterProvider
 
 @Composable
 fun ServerConfigForm(
@@ -40,6 +42,14 @@ fun ServerConfigForm(
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(text = stringResource(id = R.string.name)) },
+            value = localServerConfig.name,
+            onValueChange = {
+                localServerConfig = localServerConfig.copy(name = it)
+            },
+        )
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
             label = { Text(text = stringResource(id = R.string.barrier_client_name)) },
@@ -83,10 +93,14 @@ fun ServerConfigForm(
 @Preview
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun PreviewServerConfigForm() {
+private fun PreviewServerConfigForm(
+    @PreviewParameter(ServerConfigPreviewParameterProvider:: class, limit = 2) serverConfig: ServerConfig,
+) {
     BarrierClientTheme {
         Surface {
-            ServerConfigForm()
+            ServerConfigForm(
+                serverConfig = serverConfig,
+            )
         }
     }
 }

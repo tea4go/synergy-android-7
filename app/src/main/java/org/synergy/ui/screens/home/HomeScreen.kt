@@ -111,20 +111,21 @@ fun HomeScreen(
 
     HomeScreenContent(
         modifier = Modifier.fillMaxHeight(),
-        serverConfig = uiState.serverConfig,
+        serverConfigs = uiState.serverConfigs,
+        selectedConfigId = uiState.selectedConfigId,
         barrierClientConnected = uiState.barrierClientConnected,
         hasOverlayDrawPermission = uiState.hasOverlayDrawPermission,
         hasAccessibilityPermission = uiState.hasAccessibilityPermission,
         showOverlayDrawPermissionDialog = uiState.showOverlayDrawPermissionDialog,
         showAccessibilityPermissionDialog = uiState.showAccessibilityPermissionDialog,
-        onServerConfigChange = { viewModel.updateServerConfig(it) },
+        showAddServerConfigDialog = uiState.showAddServerConfigDialog,
+        onServerConfigSelectionChange = viewModel::setSelectedConfig,
         onConnectClick = {
             if (uiState.barrierClientConnected) {
                 barrierClientService?.disconnect()
                 return@HomeScreenContent
             }
-            viewModel.saveServerConfig()
-            uiState.serverConfig.run {
+            uiState.serverConfigs.find { it.id == uiState.selectedConfigId }?.run {
                 connect(
                     context = context,
                     barrierClientServiceBound = uiState.barrierClientServiceBound,
@@ -137,7 +138,6 @@ fun HomeScreen(
             }
         },
         onFixPermissionsClick = { showPermissionDialog(true) },
-        // onPermissionsLearnMoreClick = {},
         onAcceptPermissionClick = {
             if (uiState.showOverlayDrawPermissionDialog) {
                 requestOverlayDrawingPermission(
@@ -158,7 +158,13 @@ fun HomeScreen(
                 return@HomeScreenContent
             }
             viewModel.setShowAccessibilityPermissionDialog(false)
-        }
+        },
+        onAddServerConfigClick = { viewModel.setShowAddServerConfigDialog(true) },
+        onSaveServerConfig = {
+            viewModel.saveServerConfig(it)
+            viewModel.setShowAddServerConfigDialog(false)
+        },
+        onDismissAddServerConfigDialog = { viewModel.setShowAddServerConfigDialog(false) }
     )
 }
 

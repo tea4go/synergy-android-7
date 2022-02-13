@@ -7,7 +7,7 @@ import kotlin.random.Random
 private val serverConfigList = List(3) {
     ServerConfig(
         id = it.toLong(),
-        name = "Test category ${it + 1}",
+        name = "Test Config ${it + 1}",
         clientName = "Client name ${it + 1}",
         serverHost = "Server Host ${it + 1}",
         serverPort = Random.nextInt(1000, 9999).toString(),

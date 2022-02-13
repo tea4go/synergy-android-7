@@ -24,4 +24,9 @@
     <string name="requires_accessibility_perm_detail">Barrier client requires Accessibility enabled to perform clicks and handle keyboard input.</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="add_server">Add server</string>
+    <string name="add">Add</string>
+    <string name="update">Update</string>
+    <string name="name">Name</string>
+    <string name="server">Server</string>
 </resources>

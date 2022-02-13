@@ -1,14 +1,17 @@
 package org.synergy.ui.screens.home
 
 import android.app.Application
-import android.content.Context.MODE_PRIVATE
 import android.os.Build
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.synergy.data.db.entities.ServerConfig
 import org.synergy.data.repositories.ServerConfigRepository
 import org.synergy.services.BarrierAccessibilityService
@@ -18,32 +21,20 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeScreenViewModel @Inject constructor(
     application: Application,
-    serverConfigRepository: ServerConfigRepository,
+    private val serverConfigRepository: ServerConfigRepository,
 ) : AndroidViewModel(application) {
-    private var preferences = application.getSharedPreferences(
-        "app_preferences",
-        MODE_PRIVATE
-    )
-
     private val _uiState: MutableStateFlow<UiState> = MutableStateFlow(UiState())
-
     val uiState: StateFlow<UiState> = _uiState
 
     init {
-        preferences.run {
-            val clientName = getString(PROP_clientName, null) ?: "android"
-            val serverHost = getString(PROP_serverHost, null) ?: "192.168.0.1"
-            val serverPort = getInt(PROP_serverPort, 24800)
-            val deviceName = getString(PROP_deviceName, null) ?: "touchscreen"
-            _uiState.update {
-                it.copy(
-                    serverConfig = ServerConfig(
-                        clientName = clientName,
-                        serverHost = serverHost,
-                        serverPort = serverPort.toString(),
-                        inputDeviceName = deviceName,
+        viewModelScope.launch {
+            serverConfigRepository.getAll().collectLatest { serverConfigs ->
+                _uiState.update {
+                    it.copy(
+                        serverConfigs = serverConfigs,
+                        selectedConfigId = it.selectedConfigId ?: serverConfigs.firstOrNull()?.id,
                     )
-                )
+                }
             }
         }
         checkPermissions()
@@ -66,21 +57,6 @@ class HomeScreenViewModel @Inject constructor(
         return Pair(hasOverlayDrawPermission, hasAccessibilityPermission)
     }
 
-    fun updateServerConfig(serverConfig: ServerConfig) {
-        _uiState.update { it.copy(serverConfig = serverConfig) }
-    }
-
-    fun saveServerConfig() {
-        val preferencesEditor = preferences.edit().apply {
-            val serverConfig = uiState.value.serverConfig
-            putString(PROP_clientName, serverConfig.clientName)
-            putString(PROP_serverHost, serverConfig.serverHost)
-            putInt(PROP_serverPort, serverConfig.serverPortInt)
-            putString(PROP_deviceName, serverConfig.inputDeviceName)
-        }
-        preferencesEditor.apply()
-    }
-
     fun setBarrierClientServiceBound(bound: Boolean) {
         _uiState.update { it.copy(barrierClientServiceBound = bound) }
     }
@@ -97,14 +73,6 @@ class HomeScreenViewModel @Inject constructor(
         _uiState.update { it.copy(hasRequestedAccessibilityPermission = requested) }
     }
 
-    fun setHasOverlayDrawPermission(hasPermission: Boolean) {
-        _uiState.update { it.copy(hasOverlayDrawPermission = hasPermission) }
-    }
-
-    fun setHasAccessibilityPermission(hasPermission: Boolean) {
-        _uiState.update { it.copy(hasAccessibilityPermission = hasPermission) }
-    }
-
     fun setShowOverlayDrawPermissionDialog(show: Boolean) {
         _uiState.update { it.copy(showOverlayDrawPermissionDialog = show) }
     }
@@ -113,16 +81,24 @@ class HomeScreenViewModel @Inject constructor(
         _uiState.update { it.copy(showAccessibilityPermissionDialog = show) }
     }
 
-    companion object {
-        private const val PROP_clientName = "clientName"
-        private const val PROP_serverHost = "serverHost"
-        private const val PROP_serverPort = "serverPort"
-        private const val PROP_deviceName = "deviceName"
+    fun setSelectedConfig(serverConfig: ServerConfig) {
+        _uiState.update { it.copy(selectedConfigId = serverConfig.id) }
+    }
+
+    fun setShowAddServerConfigDialog(show: Boolean) {
+        _uiState.update { it.copy(showAddServerConfigDialog = show) }
+    }
+
+    fun saveServerConfig(serverConfig: ServerConfig) {
+        viewModelScope.launch {
+            serverConfigRepository.save(serverConfig)
+        }
     }
 }
 
 data class UiState(
-    val serverConfig: ServerConfig = ServerConfig(),
+    val serverConfigs: List<ServerConfig> = emptyList(),
+    val selectedConfigId: Long? = null,
     val hasRequestedOverlayDrawPermission: Boolean = false,
     val hasOverlayDrawPermission: Boolean = false,
     val hasRequestedAccessibilityPermission: Boolean = false,
@@ -131,4 +107,5 @@ data class UiState(
     val barrierClientConnected: Boolean = false,
     val showOverlayDrawPermissionDialog: Boolean = false,
     val showAccessibilityPermissionDialog: Boolean = false,
+    val showAddServerConfigDialog: Boolean = false,
 )

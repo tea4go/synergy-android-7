@@ -13,6 +13,10 @@ kapt {
     }
 }
 
+kotlin.sourceSets.all {
+    languageSettings.optIn("kotlin.RequiresOptIn")
+}
+
 android {
     compileSdkVersion 31
 
