@@ -24,7 +24,7 @@ import org.synergy.utils.ServerConfigPreviewParameterProvider
 @Composable
 fun ConnectedStatus(
     modifier: Modifier = Modifier,
-    serverConfig: ServerConfig,
+    serverConfig: ServerConfig? = null,
 ) {
     Column(
         modifier = modifier
@@ -34,7 +34,7 @@ fun ConnectedStatus(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = stringResource(id = R.string.connected_to_server_name, serverConfig.name),
+            text = stringResource(id = R.string.connected_to_server_name, serverConfig?.name ?: ""),
             style = MaterialTheme.typography.caption,
             color = Color.Black,
             maxLines = 1,

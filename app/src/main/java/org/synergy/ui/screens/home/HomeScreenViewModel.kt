@@ -98,6 +98,10 @@ class HomeScreenViewModel @Inject constructor(
             serverConfigRepository.save(serverConfig)
         }
     }
+
+    fun setConnectedServerConfigId(connectedServerConfigId: Long?) {
+        _uiState.update { it.copy(connectedServerConfigId = connectedServerConfigId) }
+    }
 }
 
 data class UiState(
@@ -113,4 +117,8 @@ data class UiState(
     val showAccessibilityPermissionDialog: Boolean = false,
     val showAddServerConfigDialog: Boolean = false,
     val editServerConfig: ServerConfig? = null,
-)
+    val connectedServerConfigId: Long? = null,
+) {
+    val connectedServerConfig: ServerConfig?
+        get() = serverConfigs.find { it.id == connectedServerConfigId }
+}

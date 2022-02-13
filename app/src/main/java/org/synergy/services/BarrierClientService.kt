@@ -27,6 +27,10 @@ import javax.inject.Inject
 class BarrierClientService : Service() {
     @Inject
     lateinit var eventQueue: EventQueue
+    var configId: Long? = null
+        private set
+    var connected: Boolean = false
+        private set
 
     private var client: Client? = null
     private val binder: IBinder = LocalBinder()
@@ -46,6 +50,7 @@ class BarrierClientService : Service() {
             return START_NOT_STICKY
         }
 
+        configId = intent.getLongExtra(EXTRA_CONFIG_ID, -1)
         val ipAddress = intent.getStringExtra(EXTRA_IP_ADDRESS)
         val port = intent.getIntExtra(EXTRA_PORT, -1)
         val clientName = intent.getStringExtra(EXTRA_CLIENT_NAME)
@@ -121,6 +126,7 @@ class BarrierClientService : Service() {
             basicScreen,
             eventQueue,
         ) { connected ->
+            this.connected = connected
             onConnectionChangeListeners.forEach { it(connected) }
             if (connected) {
                 startService(Intent(this, BarrierAccessibilityService::class.java))
@@ -169,6 +175,7 @@ class BarrierClientService : Service() {
     companion object {
         private const val TAG = "BarrierClientService"
 
+        const val EXTRA_CONFIG_ID = "id"
         const val EXTRA_IP_ADDRESS = "ip_address"
         const val EXTRA_PORT = "port"
         const val EXTRA_CLIENT_NAME = "client_name"

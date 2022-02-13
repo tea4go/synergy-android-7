@@ -62,7 +62,7 @@ fun HomeScreenContent(
                 onFixClick = onFixPermissionsClick,
             )
         }
-        if (barrierClientConnected && connectedServerConfig != null) {
+        if (barrierClientConnected) {
             ConnectedStatus(
                 serverConfig = connectedServerConfig,
             )
