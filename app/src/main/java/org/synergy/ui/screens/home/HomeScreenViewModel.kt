@@ -5,14 +5,21 @@ import android.content.Context.MODE_PRIVATE
 import android.os.Build
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import org.synergy.data.ServerConfig
+import org.synergy.data.db.entities.ServerConfig
+import org.synergy.data.repositories.ServerConfigRepository
 import org.synergy.services.BarrierAccessibilityService
 import org.synergy.utils.AccessibilityUtils
+import javax.inject.Inject
 
-class HomeScreenViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class HomeScreenViewModel @Inject constructor(
+    application: Application,
+    serverConfigRepository: ServerConfigRepository,
+) : AndroidViewModel(application) {
     private var preferences = application.getSharedPreferences(
         "app_preferences",
         MODE_PRIVATE
@@ -31,10 +38,10 @@ class HomeScreenViewModel(application: Application) : AndroidViewModel(applicati
             _uiState.update {
                 it.copy(
                     serverConfig = ServerConfig(
-                        clientName,
-                        serverHost,
-                        serverPort.toString(),
-                        deviceName,
+                        clientName = clientName,
+                        serverHost = serverHost,
+                        serverPort = serverPort.toString(),
+                        inputDeviceName = deviceName,
                     )
                 )
             }

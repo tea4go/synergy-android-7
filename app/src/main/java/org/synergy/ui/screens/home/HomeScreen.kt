@@ -27,12 +27,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import org.synergy.R
 import org.synergy.barrier.base.utils.Timber
 import org.synergy.barrier.base.utils.e
-import org.synergy.data.ServerConfig
+import org.synergy.data.db.entities.ServerConfig
 import org.synergy.services.BarrierClientService
 import org.synergy.ui.common.FixPermissionsBanner
 import org.synergy.ui.common.OnLifecycleEvent
@@ -42,7 +42,7 @@ import org.synergy.utils.DisplayUtils
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeScreenViewModel = viewModel(),
+    viewModel: HomeScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current

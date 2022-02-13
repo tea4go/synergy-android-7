@@ -13,7 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import org.synergy.R
-import org.synergy.data.ServerConfig
+import org.synergy.data.db.entities.ServerConfig
 import org.synergy.ui.theme.BarrierClientTheme
 
 @Composable
