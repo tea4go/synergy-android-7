@@ -20,10 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import org.synergy.R
 import org.synergy.data.db.entities.ServerConfig
-import org.synergy.ui.common.AddEditServerConfigDialogContent
-import org.synergy.ui.common.FixPermissionsBanner
-import org.synergy.ui.common.ServerConfigDetail
-import org.synergy.ui.common.ServerConfigDropdown
+import org.synergy.ui.common.*
 import org.synergy.ui.theme.BarrierClientTheme
 import org.synergy.utils.ServerConfigListPreviewParameterProvider
 
@@ -39,6 +36,7 @@ fun HomeScreenContent(
     showAccessibilityPermissionDialog: Boolean = false,
     showAddServerConfigDialog: Boolean = false,
     editServerConfig: ServerConfig? = null,
+    connectedServerConfig: ServerConfig? = null,
     onServerConfigSelectionChange: (ServerConfig) -> Unit = {},
     onConnectClick: () -> Unit = {},
     onFixPermissionsClick: () -> Unit = {},
@@ -62,7 +60,11 @@ fun HomeScreenContent(
                 hasAccessibilityPermission = hasAccessibilityPermission,
                 hasOverlayDrawPermission = hasOverlayDrawPermission,
                 onFixClick = onFixPermissionsClick,
-                // onLearnMoreClick = onPermissionsLearnMoreClick,
+            )
+        }
+        if (barrierClientConnected && connectedServerConfig != null) {
+            ConnectedStatus(
+                serverConfig = connectedServerConfig,
             )
         }
         Column(
@@ -170,7 +172,6 @@ private fun PermissionsBanner(
     hasAccessibilityPermission: Boolean,
     hasOverlayDrawPermission: Boolean,
     onFixClick: () -> Unit,
-    // onLearnMoreClick: () -> Unit,
 ) {
     FixPermissionsBanner(
         modifier = modifier,
