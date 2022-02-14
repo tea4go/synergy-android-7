@@ -13,7 +13,9 @@ import org.synergy.MainActivity
 import org.synergy.R
 import org.synergy.barrier.base.EventQueue
 import org.synergy.barrier.base.EventType
-import org.synergy.barrier.base.utils.Log
+import org.synergy.barrier.base.utils.Timber
+import org.synergy.barrier.base.utils.d
+import org.synergy.barrier.base.utils.e
 import org.synergy.barrier.client.Client
 import org.synergy.barrier.common.screens.BasicScreen
 import org.synergy.barrier.net.NetworkAddress
@@ -46,7 +48,7 @@ class BarrierClientService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent == null) {
-            Log.error("intent is null")
+            Timber.e("intent is null")
             return START_NOT_STICKY
         }
 
@@ -57,7 +59,7 @@ class BarrierClientService : Service() {
         val screenWidth = intent.getIntExtra(EXTRA_SCREEN_WIDTH, -1)
         val screenHeight = intent.getIntExtra(EXTRA_SCREEN_HEIGHT, -1)
 
-        Log.debug("ipAddress: $ipAddress, port: $port, clientName: $clientName, resolution: ${screenWidth}x$screenHeight")
+        Timber.d("ipAddress: $ipAddress, port: $port, clientName: $clientName, resolution: ${screenWidth}x$screenHeight")
 
         if (ipAddress == null || port <= 0 || clientName == null || screenWidth < 0 || screenHeight < 0) {
             return START_NOT_STICKY
@@ -83,6 +85,7 @@ class BarrierClientService : Service() {
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, SILENT_NOTIFICATIONS_CHANNEL_ID)
         } else {
+            @Suppress("DEPRECATION")
             Notification.Builder(this)
         }
         val notification: Notification = builder.apply {
@@ -116,7 +119,7 @@ class BarrierClientService : Service() {
 
         val basicScreen = BasicScreen(this)
         basicScreen.setShape(screenWidth, screenHeight)
-        Log.debug("Resolution: $screenWidth x $screenHeight")
+        Timber.d("Resolution: $screenWidth x $screenHeight")
 
         client = Client(
             clientName,
@@ -143,7 +146,7 @@ class BarrierClientService : Service() {
                 client?.connect()
                 startEventQueue()
             } catch (e: Exception) {
-                android.util.Log.e(TAG, "Error:", e)
+                Timber.e("Error:", e)
                 stopSelf()
             }
         }
@@ -156,7 +159,6 @@ class BarrierClientService : Service() {
             // TODO event.deleteData ();
             event = eventQueue.getEvent(-1.0) ?: return
         }
-        android.util.Log.d(TAG, "startEventQueue: $event")
     }
 
     override fun onDestroy() {
@@ -173,8 +175,6 @@ class BarrierClientService : Service() {
     }
 
     companion object {
-        private const val TAG = "BarrierClientService"
-
         const val EXTRA_CONFIG_ID = "id"
         const val EXTRA_IP_ADDRESS = "ip_address"
         const val EXTRA_PORT = "port"
