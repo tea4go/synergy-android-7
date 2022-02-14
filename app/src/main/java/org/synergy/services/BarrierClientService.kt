@@ -49,6 +49,7 @@ class BarrierClientService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent == null) {
             Timber.e("intent is null")
+            stopSelf()
             return START_NOT_STICKY
         }
 
@@ -62,6 +63,7 @@ class BarrierClientService : Service() {
         Timber.d("ipAddress: $ipAddress, port: $port, clientName: $clientName, resolution: ${screenWidth}x$screenHeight")
 
         if (ipAddress == null || port <= 0 || clientName == null || screenWidth < 0 || screenHeight < 0) {
+            stopSelf()
             return START_NOT_STICKY
         }
 
@@ -104,7 +106,7 @@ class BarrierClientService : Service() {
             screenWidth = screenWidth,
             screenHeight = screenHeight
         )
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun connect(
@@ -147,6 +149,7 @@ class BarrierClientService : Service() {
                 startEventQueue()
             } catch (e: Exception) {
                 Timber.e("Error:", e)
+                stopForeground(true)
                 stopSelf()
             }
         }
