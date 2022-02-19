@@ -19,11 +19,8 @@
  */
 package org.synergy.barrier.base
 
-import android.util.Log
 import org.synergy.barrier.base.Event.Companion.deleteData
-import org.synergy.barrier.base.utils.Log.Companion.debug
-import org.synergy.barrier.base.utils.Log.Companion.debug5
-import org.synergy.barrier.base.utils.Log.Companion.note
+import org.synergy.barrier.base.utils.*
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -61,10 +58,6 @@ class EventQueue @Inject constructor() : EventQueueInterface {
     /**
      * Get an event from the event queue
      *
-     *
-     * TODO: The SimpleEventQueueBuffer has not been tested... and is rarely used
-     * in the client
-     *
      * @event Event to get
      * @timeout milliseconds to wait, < 0.0 is infinite
      */
@@ -79,7 +72,7 @@ class EventQueue @Inject constructor() : EventQueueInterface {
                 buffer.getEvent(timeout)
             }
         } catch (e: InterruptedException) {
-            Log.e(TAG, "getEvent: ", e)
+            Timber.e("getEvent: ", e)
             return null
         }
         return when (eventData?.type) {
@@ -98,14 +91,14 @@ class EventQueue @Inject constructor() : EventQueueInterface {
      * Dispatch an event
      */
     override fun dispatchEvent(event: Event): Boolean {
-        note("dispatching: $event")
+        Timber.n("dispatching: $event")
         val target = event.target ?: return false
         val job = getHandler(event.type, target)
         if (job == null) {
-            debug("job is null for Event: $event")
+            Timber.d("job is null for Event: $event")
             return false
         }
-        debug("running job")
+        Timber.d1("running job")
         job.run(event)
         return true
     }
@@ -114,10 +107,10 @@ class EventQueue @Inject constructor() : EventQueueInterface {
      * Add an event to the queue
      */
     override fun addEvent(event: Event) {
-        debug5("addEvent")
+        Timber.d5("addEvent")
         when (event.type) {
             EventType.UNKNOWN, EventType.SYSTEM, EventType.TIMER -> {
-                debug("Bogus event discarded")
+                Timber.d("Bogus event discarded")
                 return
             }
             else -> {}
@@ -178,7 +171,7 @@ class EventQueue @Inject constructor() : EventQueueInterface {
 
     @Synchronized
     private fun saveEvent(event: Event): Int {
-        debug("Old EventIDs Size: " + oldEventIDs.size)
+        Timber.d1("Old EventIDs Size: " + oldEventIDs.size)
 
         // choose id
         val id = if (!oldEventIDs.isEmpty()) {
@@ -189,7 +182,7 @@ class EventQueue @Inject constructor() : EventQueueInterface {
         }
 
         // save data
-        debug("Saving event data: $id")
+        Timber.d1("Saving event data: $id")
         events[id] = event
         return id
     }
@@ -204,13 +197,5 @@ class EventQueue @Inject constructor() : EventQueueInterface {
             oldEventIDs.addLast(eventID)
             removedEvent
         }
-    }
-
-    companion object {
-        private val TAG = EventQueue::class.simpleName
-
-        // private fun interrupt() {
-        //     // TODO: Todo?
-        // }
     }
 }
