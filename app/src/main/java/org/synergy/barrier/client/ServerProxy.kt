@@ -154,23 +154,18 @@ class ServerProxy(
     }
 
     private fun handleData() {
-        debug("handle data called")
-        try {
-            val din = DataInputStream(stream.getInputStream()).also { din = it }
-            // this.dout = new DataOutputStream (stream.getOutputStream ());
-            // this.oout = new ObjectOutputStream (stream.getOutputStream());
-            while (true) {
-                when (parser.parse()) {
-                    Result.OKAY -> {}
-                    Result.UNKNOWN -> {
-                        error("invalid message from server: " + din.readUTF())
-                        return
-                    }
-                    Result.DISCONNECT -> return
+        val din = DataInputStream(stream.getInputStream()).also { din = it }
+        // this.dout = new DataOutputStream (stream.getOutputStream ());
+        // this.oout = new ObjectOutputStream (stream.getOutputStream());
+        while (true) {
+            when (parser.parse()) {
+                Result.OKAY -> {}
+                Result.UNKNOWN -> {
+                    error("invalid message from server: " + din.readUTF())
+                    return
                 }
+                Result.DISCONNECT -> return
             }
-        } catch (e: IOException) {
-            Log.e(TAG, "handleData: ", e)
         }
     }
 
