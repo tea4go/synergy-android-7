@@ -19,8 +19,8 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.*
 import org.synergy.R
-import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.e
+import org.synergy.utils.Timber
+import org.synergy.utils.e
 import org.synergy.barrier.common.key.*
 import org.synergy.services.BarrierAccessibilityAction.*
 import org.synergy.utils.AccessibilityNodeInfoUtils.MoveDirection.NEXT

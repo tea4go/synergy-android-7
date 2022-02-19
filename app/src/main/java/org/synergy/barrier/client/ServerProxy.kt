@@ -22,10 +22,10 @@ package org.synergy.barrier.client
 import org.synergy.barrier.base.EventQueue
 import org.synergy.barrier.base.EventQueueTimer
 import org.synergy.barrier.base.EventType
-import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.d1
-import org.synergy.barrier.base.utils.e
-import org.synergy.barrier.base.utils.n
+import org.synergy.utils.Timber
+import org.synergy.utils.d1
+import org.synergy.utils.e
+import org.synergy.utils.n
 import org.synergy.barrier.client.ServerProxy.Parser
 import org.synergy.barrier.io.Stream
 import org.synergy.barrier.io.msgs.*

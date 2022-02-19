@@ -22,8 +22,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import org.synergy.R
-import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.e
+import org.synergy.utils.Timber
+import org.synergy.utils.e
 import org.synergy.data.db.entities.ServerConfig
 import org.synergy.services.BarrierClientService
 import org.synergy.services.ConnectionStatus

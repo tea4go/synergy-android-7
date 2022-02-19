@@ -2,8 +2,8 @@ package org.synergy
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
-import org.synergy.barrier.base.utils.BarrierDebugTree
-import org.synergy.barrier.base.utils.Timber
+import org.synergy.utils.BarrierDebugTree
+import org.synergy.utils.Timber
 
 @HiltAndroidApp
 class BarrierClientApp : Application() {

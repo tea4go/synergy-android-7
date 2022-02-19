@@ -26,8 +26,8 @@ import android.view.KeyEvent.ACTION_DOWN
 import android.view.KeyEvent.ACTION_UP
 import android.view.ViewConfiguration
 import android.view.ViewConfiguration.getTapTimeout
-import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.d1
+import org.synergy.utils.Timber
+import org.synergy.utils.d1
 import org.synergy.barrier.common.key.BarrierKeyEvent
 import org.synergy.services.BarrierAccessibilityAction.*
 import java.util.*

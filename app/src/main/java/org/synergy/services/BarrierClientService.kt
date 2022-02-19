@@ -13,9 +13,9 @@ import org.synergy.MainActivity
 import org.synergy.R
 import org.synergy.barrier.base.EventQueue
 import org.synergy.barrier.base.EventType
-import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.d1
-import org.synergy.barrier.base.utils.e
+import org.synergy.utils.Timber
+import org.synergy.utils.d1
+import org.synergy.utils.e
 import org.synergy.barrier.client.Client
 import org.synergy.barrier.common.screens.BasicScreen
 import org.synergy.barrier.net.NetworkAddress

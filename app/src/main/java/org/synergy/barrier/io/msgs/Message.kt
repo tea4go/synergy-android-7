@@ -19,8 +19,8 @@
  */
 package org.synergy.barrier.io.msgs
 
-import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.d5
+import org.synergy.utils.Timber
+import org.synergy.utils.d5
 import org.synergy.barrier.io.MessageDataOutputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream

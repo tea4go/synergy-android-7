@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.synergy.barrier.base.utils
+package org.synergy.utils
 
 import android.os.Build
 import android.util.Log
@@ -215,7 +215,7 @@ class Timber private constructor() {
     open class DebugTree : Tree() {
         protected open val fqcnIgnore = listOf(
             Timber::class.java.name,
-            Timber.Forest::class.java.name,
+            Forest::class.java.name,
             Tree::class.java.name,
             DebugTree::class.java.name
         )
@@ -463,9 +463,9 @@ class Timber private constructor() {
                 requireNotNull(tree) { "trees contained null" }
                 require(tree !== this) { "Cannot plant Timber into itself." }
             }
-            synchronized(this.trees) {
-                Collections.addAll(this.trees, *trees)
-                treeArray = this.trees.toTypedArray()
+            synchronized(Forest.trees) {
+                Collections.addAll(Forest.trees, *trees)
+                treeArray = Forest.trees.toTypedArray()
             }
         }
 

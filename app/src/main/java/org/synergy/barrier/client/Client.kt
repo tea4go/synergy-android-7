@@ -25,10 +25,10 @@ import org.synergy.barrier.base.Event
 import org.synergy.barrier.base.EventQueue
 import org.synergy.barrier.base.EventTarget
 import org.synergy.barrier.base.EventType
-import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.d
-import org.synergy.barrier.base.utils.d1
-import org.synergy.barrier.base.utils.e
+import org.synergy.utils.Timber
+import org.synergy.utils.d
+import org.synergy.utils.d1
+import org.synergy.utils.e
 import org.synergy.barrier.common.screens.ScreenInterface
 import org.synergy.barrier.io.Stream
 import org.synergy.barrier.io.msgs.EnterMessage

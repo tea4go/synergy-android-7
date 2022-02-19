@@ -20,7 +20,7 @@
 package org.synergy.barrier.base
 
 import org.synergy.barrier.base.Event.Companion.deleteData
-import org.synergy.barrier.base.utils.*
+import org.synergy.utils.*
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
