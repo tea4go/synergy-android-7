@@ -19,15 +19,13 @@
  */
 package org.synergy.barrier.client
 
-import android.util.Log
 import org.synergy.barrier.base.EventQueue
 import org.synergy.barrier.base.EventQueueTimer
 import org.synergy.barrier.base.EventType
-import org.synergy.barrier.base.utils.Log.Companion.debug
-import org.synergy.barrier.base.utils.Log.Companion.debug1
-import org.synergy.barrier.base.utils.Log.Companion.error
-import org.synergy.barrier.base.utils.Log.Companion.info
-import org.synergy.barrier.base.utils.Log.Companion.note
+import org.synergy.barrier.base.utils.Timber
+import org.synergy.barrier.base.utils.d1
+import org.synergy.barrier.base.utils.e
+import org.synergy.barrier.base.utils.n
 import org.synergy.barrier.client.ServerProxy.Parser
 import org.synergy.barrier.io.Stream
 import org.synergy.barrier.io.msgs.*
@@ -46,11 +44,6 @@ class ServerProxy(
     private var keepAliveAlarmTimer: EventQueueTimer? = null
     private var din: DataInputStream? = null
     private var dout: DataOutputStream? = null
-
-    // /**
-    //  * Handle messages after the handshake is complete
-    //  */
-    // var messageDataBuffer = ByteArray(256)
 
     init {
         // handle data on stream
@@ -71,7 +64,7 @@ class ServerProxy(
         val din = din ?: throw RuntimeException("din is null")
         // Read the header
         val header = MessageHeader(din)
-        debug("Received Header: $header")
+        Timber.d1("Received Header: $header")
         when (header.type) {
             MessageType.QINFO ->                 //queryInfo (new QueryInfoMessage ());
                 queryInfo()
@@ -81,7 +74,7 @@ class ServerProxy(
                 setOptions(setOptionsMessage)
 
                 // handshake is complete
-                debug("Handshake is complete")
+                Timber.d1("Handshake is complete")
                 parser = Parser { parseMessage() }
                 client.handshakeComplete()
             }
@@ -139,12 +132,12 @@ class ServerProxy(
             }
             MessageType.CCLOSE -> {
                 // server wants us to hangup
-                debug1("recv close")
+                Timber.d1("recv close")
                 // client.disconnect (null);
                 return Result.DISCONNECT
             }
             MessageType.EBAD -> {
-                error("server disconnected due to a protocol error")
+                Timber.e("server disconnected due to a protocol error")
                 // client.disconnect("server reported a protocol error");
                 return Result.DISCONNECT
             }
@@ -155,13 +148,11 @@ class ServerProxy(
 
     private fun handleData() {
         val din = DataInputStream(stream.getInputStream()).also { din = it }
-        // this.dout = new DataOutputStream (stream.getOutputStream ());
-        // this.oout = new ObjectOutputStream (stream.getOutputStream());
         while (true) {
             when (parser.parse()) {
                 Result.OKAY -> {}
                 Result.UNKNOWN -> {
-                    error("invalid message from server: " + din.readUTF())
+                    Timber.e("invalid message from server: " + din.readUTF())
                     return
                 }
                 Result.DISCONNECT -> return
@@ -188,7 +179,7 @@ class ServerProxy(
     }
 
     private fun handleKeepAliveAlarm() {
-        note("server is dead")
+        Timber.n("server is dead")
         client.disconnect("server is not responding")
     }
 
@@ -209,12 +200,12 @@ class ServerProxy(
                 info.cursorPos.y
             ).write(dout)
         } catch (e: Exception) {
-            Log.e(TAG, "sendInfo: ", e)
+            Timber.e("sendInfo: ", e)
         }
     }
 
     private fun infoAcknowledgment() {
-        debug("recv info acknowledgment")
+        Timber.d1("recv info acknowledgment")
     }
 
     fun onInfoChanged() {
@@ -223,18 +214,18 @@ class ServerProxy(
     }
 
     private fun enter(enterMessage: EnterMessage) {
-        debug1("Screen entered: $enterMessage")
+        Timber.d1("Screen entered: $enterMessage")
         seqNum = enterMessage.sequenceNumber
         client.enter(enterMessage)
     }
 
     private fun leave(leaveMessage: LeaveMessage) {
-        debug1("Screen left: $leaveMessage")
+        Timber.d1("Screen left: $leaveMessage")
         client.leave(leaveMessage)
     }
 
     private fun keyUp(keyUpMessage: KeyUpMessage) {
-        debug1(keyUpMessage.toString())
+        Timber.d1(keyUpMessage.toString())
         try {
             client.keyUp(keyUpMessage.id, keyUpMessage.mask, keyUpMessage.button)
         } catch (e: Exception) {
@@ -242,12 +233,12 @@ class ServerProxy(
     }
 
     private fun keyDown(keyDownMessage: KeyDownMessage) {
-        info(keyDownMessage.toString())
+        Timber.d1(keyDownMessage.toString())
         client.keyDown(keyDownMessage.id, keyDownMessage.mask, keyDownMessage.button)
     }
 
     private fun keyRepeat(keyRepeatMessage: KeyRepeatMessage) {
-        debug1(keyRepeatMessage.toString())
+        Timber.d1(keyRepeatMessage.toString())
         client.keyRepeat(
             keyRepeatMessage.id,
             keyRepeatMessage.mask,
@@ -257,12 +248,12 @@ class ServerProxy(
     }
 
     private fun mouseDown(mouseDownMessage: MouseDownMessage) {
-        debug(mouseDownMessage.toString())
+        Timber.d1(mouseDownMessage.toString())
         client.mouseDown(mouseDownMessage.getButtonId())
     }
 
     private fun mouseUp(mouseUpMessage: MouseUpMessage) {
-        debug(mouseUpMessage.toString())
+        Timber.d1(mouseUpMessage.toString())
         client.mouseUp(mouseUpMessage.getButtonId())
     }
 
@@ -279,17 +270,13 @@ class ServerProxy(
     private fun grabClipboard(clipboardMessage: ClipboardMessage) {}
 
     private fun setClipboard(clipboardDataMessage: ClipboardDataMessage) {
-        debug1("Setting clipboard: $clipboardDataMessage")
+        Timber.d1("Setting clipboard: $clipboardDataMessage")
     }
 
     /**
      * Enumeration and Interface for parsing function
      */
     private enum class Result {
-        OKAY, UNKNOWN, DISCONNECT
-    }
-
-    private enum class EResult {
         OKAY, UNKNOWN, DISCONNECT
     }
 
@@ -300,7 +287,6 @@ class ServerProxy(
     }
 
     companion object {
-        private val TAG = ServerProxy::class.simpleName
         private const val KEEP_ALIVE_UNTIL_DEATH = 3.0
         private const val KEEP_ALIVE_RATE = 3.0
     }
