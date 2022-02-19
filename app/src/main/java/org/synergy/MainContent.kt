@@ -41,10 +41,12 @@ private fun MainTopBar(
     modifier: Modifier = Modifier,
 ) {
     val title by LocalToolbarState.current.title
+    val actions by LocalToolbarState.current.actions
 
     TopAppBar(
         modifier = modifier,
         title = { Text(text = title) },
+        actions = { actions?.invoke(this) }
     )
 }
 
@@ -59,7 +61,9 @@ private fun MainNavHost(
         startDestination = "home",
     ) {
         composable("home") {
-            HomeScreen()
+            HomeScreen(
+                openSettings = { navController.navigateToSettings() }
+            )
         }
         composable("settings") {
             SettingsScreen()

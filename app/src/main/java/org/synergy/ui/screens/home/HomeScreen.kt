@@ -15,6 +15,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,6 +40,7 @@ import org.synergy.utils.e
 fun HomeScreen(
     viewModel: HomeScreenViewModel = hiltViewModel(),
     title: String = stringResource(id = R.string.app_name),
+    openSettings: () -> Unit = {},
 ) {
     val toolbarState = LocalToolbarState.current
     val uiState by viewModel.uiState.collectAsState()
@@ -113,16 +118,17 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        toolbarState.setTitle(title)
-    }
-
     OnLifecycleEvent { _, event ->
         when (event) {
-            Lifecycle.Event.ON_CREATE -> {
-
-            }
             Lifecycle.Event.ON_RESUME -> {
+                toolbarState.run {
+                    setTitle(title)
+                    setActions {
+                        IconButton(onClick = openSettings) {
+                            Icon(Icons.Rounded.Settings, contentDescription = "Settings")
+                        }
+                    }
+                }
                 bindToClientService(
                     context = context,
                     serviceConnection = serviceConnection,
@@ -133,6 +139,9 @@ fun HomeScreen(
             }
             Lifecycle.Event.ON_PAUSE -> {
                 context.unbindService(serviceConnection)
+            }
+            Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> {
+                toolbarState.setActions(null)
             }
             else -> Unit
         }
