@@ -19,7 +19,8 @@
  */
 package org.synergy.barrier.io.msgs
 
-import org.synergy.barrier.base.utils.Log.Companion.debug5
+import org.synergy.barrier.base.utils.Timber
+import org.synergy.barrier.base.utils.d5
 import org.synergy.barrier.io.MessageDataOutputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
@@ -96,7 +97,7 @@ abstract class Message {
      */
     @Throws(IOException::class)
     fun write(dout: DataOutputStream) {
-        debug5("Message: Sending: $this")
+        Timber.d5("Message: Sending: $this")
 
         // Write the message data to the byte array.  
         //  Subclasses MUST override this function
@@ -105,7 +106,7 @@ abstract class Message {
         // Set the message header size based on how much data
         //  has been written to the byte array stream
         header?.dataSize = dataStream.size()
-        debug5("Message: Sending Header: $header")
+        Timber.d5("Message: Sending Header: $header")
 
         // Write out the header and the message data
         header?.write(dout)
