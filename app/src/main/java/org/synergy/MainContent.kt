@@ -6,13 +6,15 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.synergy.ui.screens.home.HomeScreen
+import org.synergy.ui.screens.settings.SettingsScreen
+import org.synergy.utils.LocalToolbarState
 
 @Composable
 fun MainContent(
@@ -38,11 +40,11 @@ fun MainContent(
 private fun MainTopBar(
     modifier: Modifier = Modifier,
 ) {
+    val title by LocalToolbarState.current.title
+
     TopAppBar(
         modifier = modifier,
-        title = {
-            Text(text = stringResource(id = R.string.app_name))
-        },
+        title = { Text(text = title) },
     )
 }
 
@@ -59,5 +61,12 @@ private fun MainNavHost(
         composable("home") {
             HomeScreen()
         }
+        composable("settings") {
+            SettingsScreen()
+        }
     }
+}
+
+private fun NavHostController.navigateToSettings() = this.navigate("settings") {
+    launchSingleTop = true
 }

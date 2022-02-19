@@ -28,6 +28,7 @@ import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.AndroidEntryPoint
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_NAME
+import org.synergy.utils.ProvideToolbarState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -35,7 +36,9 @@ class MainActivity : ComponentActivity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MainContent()
+            ProvideToolbarState {
+                MainContent()
+            }
         }
         createNotificationChannels()
     }

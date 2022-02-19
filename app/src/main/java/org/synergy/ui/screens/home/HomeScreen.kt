@@ -18,22 +18,26 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import org.synergy.R
-import org.synergy.utils.Timber
-import org.synergy.utils.e
 import org.synergy.data.db.entities.ServerConfig
 import org.synergy.services.BarrierClientService
 import org.synergy.services.ConnectionStatus
 import org.synergy.ui.common.OnLifecycleEvent
 import org.synergy.utils.DisplayUtils
+import org.synergy.utils.LocalToolbarState
+import org.synergy.utils.Timber
+import org.synergy.utils.e
 
 @Composable
 fun HomeScreen(
     viewModel: HomeScreenViewModel = hiltViewModel(),
+    title: String = stringResource(id = R.string.app_name),
 ) {
+    val toolbarState = LocalToolbarState.current
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var barrierClientService: BarrierClientService? by remember { mutableStateOf(null) }
@@ -107,6 +111,10 @@ fun HomeScreen(
                 viewModel.setBarrierClientServiceBound(false)
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        toolbarState.setTitle(title)
     }
 
     OnLifecycleEvent { _, event ->

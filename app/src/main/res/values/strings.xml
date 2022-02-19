@@ -33,4 +33,5 @@
     <string name="edit_server">Edit server</string>
     <string name="connected_to_server_name">Connected to %s</string>
     <string name="connecting">Connecting</string>
+    <string name="settings">Settings</string>
 </resources>
