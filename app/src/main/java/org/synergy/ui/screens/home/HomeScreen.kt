@@ -24,7 +24,9 @@ import androidx.lifecycle.Lifecycle
 import org.synergy.R
 import org.synergy.barrier.base.utils.Timber
 import org.synergy.barrier.base.utils.e
+import org.synergy.data.db.entities.ServerConfig
 import org.synergy.services.BarrierClientService
+import org.synergy.services.ConnectionStatus
 import org.synergy.ui.common.OnLifecycleEvent
 import org.synergy.utils.DisplayUtils
 
@@ -35,6 +37,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var barrierClientService: BarrierClientService? by remember { mutableStateOf(null) }
+    var shouldConnectOnBind by remember { mutableStateOf(false) }
 
     fun showPermissionDialog(force: Boolean = false) {
         if ((force || !uiState.hasRequestedOverlayDrawPermission) && !uiState.hasOverlayDrawPermission) {
@@ -81,11 +84,19 @@ fun HomeScreen(
                 service.service
                     .also { barrierClientService = it }
                     .apply {
-                        viewModel.setBarrierClientConnected(connected)
+                        viewModel.setBarrierClientConnectionStatus(connectionStatus)
                         viewModel.setConnectedServerConfigId(configId)
-                        addOnConnectionChangeListener {
-                            viewModel.setBarrierClientConnected(it)
+                        addOnConnectionStatusChangeListener {
+                            viewModel.setBarrierClientConnectionStatus(it)
                             viewModel.setConnectedServerConfigId(configId)
+                        }
+                    }
+                    .also {
+                        if (shouldConnectOnBind) {
+                            uiState.serverConfigs
+                                .find { it.id == uiState.selectedConfigId }
+                                ?.run { connect(context, this, it) }
+                            shouldConnectOnBind = false
                         }
                     }
                 viewModel.setBarrierClientServiceBound(true)
@@ -100,6 +111,9 @@ fun HomeScreen(
 
     OnLifecycleEvent { _, event ->
         when (event) {
+            Lifecycle.Event.ON_CREATE -> {
+
+            }
             Lifecycle.Event.ON_RESUME -> {
                 bindToClientService(
                     context = context,
@@ -121,7 +135,7 @@ fun HomeScreen(
         serverConfigs = uiState.serverConfigs,
         selectedConfigId = uiState.selectedConfigId,
         connectedServerConfig = uiState.connectedServerConfig,
-        barrierClientConnected = uiState.barrierClientConnected,
+        barrierClientConnectionStatus = uiState.barrierClientConnectionStatus,
         hasOverlayDrawPermission = uiState.hasOverlayDrawPermission,
         hasAccessibilityPermission = uiState.hasAccessibilityPermission,
         showOverlayDrawPermissionDialog = uiState.showOverlayDrawPermissionDialog,
@@ -130,22 +144,22 @@ fun HomeScreen(
         editServerConfig = uiState.editServerConfig,
         onServerConfigSelectionChange = viewModel::setSelectedConfig,
         onConnectClick = {
-            if (uiState.barrierClientConnected) {
+            if (uiState.barrierClientConnectionStatus == ConnectionStatus.Connected) {
                 barrierClientService?.disconnect()
                 return@HomeScreenContent
             }
-            uiState.serverConfigs.find { it.id == uiState.selectedConfigId }?.run {
-                connect(
+            if (!uiState.barrierClientServiceBound) {
+                shouldConnectOnBind = true
+                startBarrierClientService(
                     context = context,
                     barrierClientServiceBound = uiState.barrierClientServiceBound,
                     serviceConnection = serviceConnection,
-                    id = id,
-                    clientName = clientName,
-                    serverHost = serverHost,
-                    serverPort = serverPortInt,
-                    // deviceName = inputDeviceName,
                 )
+                return@HomeScreenContent
             }
+            uiState.serverConfigs
+                .find { it.id == uiState.selectedConfigId }
+                ?.run { connect(context, this, barrierClientService) }
         },
         onFixPermissionsClick = { showPermissionDialog(true) },
         onAcceptPermissionClick = {
@@ -181,32 +195,30 @@ fun HomeScreen(
 
 private fun connect(
     context: Context,
-    barrierClientServiceBound: Boolean,
-    serviceConnection: ServiceConnection,
-    id: Long,
-    clientName: String,
-    serverHost: String,
-    serverPort: Int,
-    // deviceName: String,
+    serverConfig: ServerConfig,
+    barrierClientService: BarrierClientService?
 ) {
     val displayBounds = DisplayUtils.getDisplayBounds(context)
     if (displayBounds == null) {
         Timber.e("displayBounds is null")
         return
     }
+    barrierClientService?.connect(
+        configId = serverConfig.id,
+        clientName = serverConfig.clientName,
+        ipAddress = serverConfig.serverHost,
+        port = serverConfig.serverPortInt,
+        screenWidth = displayBounds.width(),
+        screenHeight = displayBounds.height(),
+    )
+}
 
-    val intent = Intent(
-        context,
-        BarrierClientService::class.java,
-    ).apply {
-        putExtra(BarrierClientService.EXTRA_CONFIG_ID, id)
-        putExtra(BarrierClientService.EXTRA_IP_ADDRESS, serverHost)
-        putExtra(BarrierClientService.EXTRA_PORT, serverPort)
-        putExtra(BarrierClientService.EXTRA_CLIENT_NAME, clientName)
-        putExtra(BarrierClientService.EXTRA_SCREEN_WIDTH, displayBounds.width())
-        putExtra(BarrierClientService.EXTRA_SCREEN_HEIGHT, displayBounds.height())
-    }
-
+private fun startBarrierClientService(
+    context: Context,
+    barrierClientServiceBound: Boolean,
+    serviceConnection: ServiceConnection,
+) {
+    val intent = Intent(context, BarrierClientService::class.java)
     ContextCompat.startForegroundService(context.applicationContext, intent)
     if (!barrierClientServiceBound) {
         bindToClientService(

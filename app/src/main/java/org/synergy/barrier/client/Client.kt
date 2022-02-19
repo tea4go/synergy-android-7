@@ -91,7 +91,7 @@ class Client(
         connectionChangeListener(true)
     }
 
-    fun disconnect(msg: String?) {
+    fun disconnect(msg: String? = null) {
         cleanupTimer()
         cleanupScreen()
         cleanupConnecting()

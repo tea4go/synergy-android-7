@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import org.synergy.data.db.entities.ServerConfig
 import org.synergy.data.repositories.ServerConfigRepository
 import org.synergy.services.BarrierAccessibilityService
+import org.synergy.services.ConnectionStatus
 import org.synergy.utils.AccessibilityUtils
 import javax.inject.Inject
 
@@ -60,8 +61,8 @@ class HomeScreenViewModel @Inject constructor(
         _uiState.update { it.copy(barrierClientServiceBound = bound) }
     }
 
-    fun setBarrierClientConnected(connected: Boolean) {
-        _uiState.update { it.copy(barrierClientConnected = connected) }
+    fun setBarrierClientConnectionStatus(connectionStatus: ConnectionStatus) {
+        _uiState.update { it.copy(barrierClientConnectionStatus = connectionStatus) }
     }
 
     fun setRequestedOverlayDrawPermission(requested: Boolean) {
@@ -112,7 +113,7 @@ data class UiState(
     val hasRequestedAccessibilityPermission: Boolean = false,
     val hasAccessibilityPermission: Boolean = false,
     val barrierClientServiceBound: Boolean = false,
-    val barrierClientConnected: Boolean = false,
+    val barrierClientConnectionStatus: ConnectionStatus = ConnectionStatus.Disconnected(),
     val showOverlayDrawPermissionDialog: Boolean = false,
     val showAccessibilityPermissionDialog: Boolean = false,
     val showAddServerConfigDialog: Boolean = false,

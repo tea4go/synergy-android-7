@@ -9,8 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import org.synergy.R
 import org.synergy.data.db.entities.ServerConfig
+import org.synergy.services.ConnectionStatus
+import org.synergy.services.ConnectionStatus.*
 import org.synergy.ui.common.*
 import org.synergy.ui.theme.BarrierClientTheme
 import org.synergy.utils.ServerConfigListPreviewParameterProvider
@@ -29,7 +31,7 @@ fun HomeScreenContent(
     modifier: Modifier = Modifier,
     serverConfigs: List<ServerConfig> = emptyList(),
     selectedConfigId: Long? = null,
-    barrierClientConnected: Boolean = false,
+    barrierClientConnectionStatus: ConnectionStatus = Disconnected(),
     hasOverlayDrawPermission: Boolean = false,
     hasAccessibilityPermission: Boolean = false,
     showOverlayDrawPermissionDialog: Boolean = false,
@@ -62,7 +64,7 @@ fun HomeScreenContent(
                 onFixClick = onFixPermissionsClick,
             )
         }
-        if (barrierClientConnected) {
+        if (barrierClientConnectionStatus == Connected) {
             ConnectedStatus(
                 serverConfig = connectedServerConfig,
             )
@@ -111,13 +113,21 @@ fun HomeScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                enabled = if (barrierClientConnected) true else hasPermissions,
+                enabled = when (barrierClientConnectionStatus) {
+                    Connected -> true
+                    Connecting -> false
+                    else -> hasPermissions
+                },
                 onClick = onConnectClick,
             ) {
                 Text(
                     style = MaterialTheme.typography.button,
                     text = stringResource(
-                        id = if (barrierClientConnected) R.string.disconnect else R.string.connect
+                        id = when (barrierClientConnectionStatus) {
+                            Connected -> R.string.disconnect
+                            Connecting -> R.string.connecting
+                            else -> R.string.connect
+                        }
                     ).uppercase()
                 )
             }

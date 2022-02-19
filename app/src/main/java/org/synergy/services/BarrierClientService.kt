@@ -14,13 +14,14 @@ import org.synergy.R
 import org.synergy.barrier.base.EventQueue
 import org.synergy.barrier.base.EventType
 import org.synergy.barrier.base.utils.Timber
-import org.synergy.barrier.base.utils.d
+import org.synergy.barrier.base.utils.d1
 import org.synergy.barrier.base.utils.e
 import org.synergy.barrier.client.Client
 import org.synergy.barrier.common.screens.BasicScreen
 import org.synergy.barrier.net.NetworkAddress
 import org.synergy.barrier.net.SocketFactoryInterface
 import org.synergy.barrier.net.TCPSocketFactory
+import org.synergy.services.ConnectionStatus.*
 import org.synergy.utils.Constants.BARRIER_CLIENT_SERVICE_ONGOING_NOTIFICATION_ID
 import org.synergy.utils.Constants.SILENT_NOTIFICATIONS_CHANNEL_ID
 import javax.inject.Inject
@@ -31,14 +32,18 @@ class BarrierClientService : Service() {
     lateinit var eventQueue: EventQueue
     var configId: Long? = null
         private set
-    var connected: Boolean = false
-        private set
-
     private var client: Client? = null
     private val binder: IBinder = LocalBinder()
-    private val job = SupervisorJob()
-    private val coroutineScope = CoroutineScope(Dispatchers.IO + job)
-    private val onConnectionChangeListeners = mutableListOf<(Boolean) -> Unit>()
+    private var quitEventLoop = false
+    private var job = SupervisorJob()
+    private var coroutineScope = CoroutineScope(Dispatchers.IO + job)
+    private val onConnectionStatusChangeListeners = mutableListOf<(ConnectionStatus) -> Unit>()
+
+    var connectionStatus: ConnectionStatus = Disconnected()
+        private set(value) {
+            field = value
+            onConnectionStatusChangeListeners.forEach { it(value) }
+        }
 
     inner class LocalBinder : Binder() {
         val service: BarrierClientService = this@BarrierClientService
@@ -47,26 +52,11 @@ class BarrierClientService : Service() {
     override fun onBind(intent: Intent): IBinder = binder
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null) {
-            Timber.e("intent is null")
-            stopSelf()
-            return START_NOT_STICKY
-        }
+        showNotification()
+        return START_STICKY
+    }
 
-        configId = intent.getLongExtra(EXTRA_CONFIG_ID, -1)
-        val ipAddress = intent.getStringExtra(EXTRA_IP_ADDRESS)
-        val port = intent.getIntExtra(EXTRA_PORT, -1)
-        val clientName = intent.getStringExtra(EXTRA_CLIENT_NAME)
-        val screenWidth = intent.getIntExtra(EXTRA_SCREEN_WIDTH, -1)
-        val screenHeight = intent.getIntExtra(EXTRA_SCREEN_HEIGHT, -1)
-
-        Timber.d("ipAddress: $ipAddress, port: $port, clientName: $clientName, resolution: ${screenWidth}x$screenHeight")
-
-        if (ipAddress == null || port <= 0 || clientName == null || screenWidth < 0 || screenHeight < 0) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
+    private fun showNotification() {
         val pendingIntent: PendingIntent = Intent(
             this,
             MainActivity::class.java
@@ -99,49 +89,56 @@ class BarrierClientService : Service() {
         }.build()
 
         startForeground(BARRIER_CLIENT_SERVICE_ONGOING_NOTIFICATION_ID, notification)
-        connect(
-            ipAddress = ipAddress,
-            port = port,
-            clientName = clientName,
-            screenWidth = screenWidth,
-            screenHeight = screenHeight
-        )
-        return START_NOT_STICKY
     }
 
-    private fun connect(
+    fun connect(
+        configId: Long,
         ipAddress: String,
         port: Int,
         clientName: String,
         screenWidth: Int,
         screenHeight: Int,
     ) {
+        this.configId = configId
+
+        // if connected to any server, disconnect from it
+        if (connectionStatus != Disconnected()) {
+            client?.disconnect()
+            client = null
+            connectionStatus = Disconnected()
+        }
+
+        if (job.isCancelled) {
+            job = SupervisorJob()
+            coroutineScope = CoroutineScope(Dispatchers.IO + job)
+        }
+
+        connectionStatus = Connecting
         val socketFactory: SocketFactoryInterface = TCPSocketFactory(eventQueue)
         val serverAddress = NetworkAddress(ipAddress, port)
-
         val basicScreen = BasicScreen(this)
         basicScreen.setShape(screenWidth, screenHeight)
-        Timber.d("Resolution: $screenWidth x $screenHeight")
+        Timber.d1("Resolution: $screenWidth x $screenHeight")
 
         client = Client(
             clientName,
             serverAddress,
             socketFactory,
-            // null,
             basicScreen,
             eventQueue,
         ) { connected ->
-            this.connected = connected
-            onConnectionChangeListeners.forEach { it(connected) }
             if (connected) {
+                connectionStatus = Connected
                 startService(Intent(this, BarrierAccessibilityService::class.java))
                 return@Client
             }
+            connectionStatus = Disconnected()
             stopService(Intent(this, BarrierAccessibilityService::class.java))
             stopForeground(true)
             stopSelf()
         }
 
+        quitEventLoop = false
         coroutineScope.launch {
             try {
                 @Suppress("BlockingMethodInNonBlockingContext")
@@ -149,6 +146,7 @@ class BarrierClientService : Service() {
                 startEventQueue()
             } catch (e: Exception) {
                 Timber.e("Error:", e)
+                connectionStatus = Disconnected(e)
                 stopForeground(true)
                 stopSelf()
             }
@@ -157,7 +155,7 @@ class BarrierClientService : Service() {
 
     private fun startEventQueue() {
         var event = eventQueue.getEvent(-1.0) ?: return
-        while (event.type != EventType.QUIT) {
+        while (!quitEventLoop && event.type != EventType.QUIT) {
             eventQueue.dispatchEvent(event)
             // TODO event.deleteData ();
             event = eventQueue.getEvent(-1.0) ?: return
@@ -169,20 +167,18 @@ class BarrierClientService : Service() {
         coroutineScope.cancel()
     }
 
-    fun addOnConnectionChangeListener(listener: (Boolean) -> Unit) {
-        onConnectionChangeListeners.add(listener)
+    fun addOnConnectionStatusChangeListener(listener: (ConnectionStatus) -> Unit) {
+        onConnectionStatusChangeListeners.add(listener)
     }
 
     fun disconnect() {
-        client?.disconnect(null)
+        client?.disconnect()
+        quitEventLoop = true
     }
+}
 
-    companion object {
-        const val EXTRA_CONFIG_ID = "id"
-        const val EXTRA_IP_ADDRESS = "ip_address"
-        const val EXTRA_PORT = "port"
-        const val EXTRA_CLIENT_NAME = "client_name"
-        const val EXTRA_SCREEN_WIDTH = "screen_width"
-        const val EXTRA_SCREEN_HEIGHT = "screen_height"
-    }
+sealed class ConnectionStatus {
+    object Connected : ConnectionStatus()
+    object Connecting : ConnectionStatus()
+    class Disconnected(error: Throwable? = null) : ConnectionStatus()
 }
