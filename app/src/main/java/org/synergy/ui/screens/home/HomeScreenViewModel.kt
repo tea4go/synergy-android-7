@@ -6,12 +6,11 @@ import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.synergy.data.db.entities.ServerConfig
+import org.synergy.data.preferences.AppPreferences
+import org.synergy.data.repositories.AppPreferencesRepository
 import org.synergy.data.repositories.ServerConfigRepository
 import org.synergy.services.BarrierAccessibilityService
 import org.synergy.services.ConnectionStatus
@@ -22,22 +21,46 @@ import javax.inject.Inject
 class HomeScreenViewModel @Inject constructor(
     application: Application,
     private val serverConfigRepository: ServerConfigRepository,
+    private val appPreferencesRepository: AppPreferencesRepository,
 ) : AndroidViewModel(application) {
     private val _uiState: MutableStateFlow<UiState> = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState
 
     init {
         viewModelScope.launch {
-            serverConfigRepository.getAll().collectLatest { serverConfigs ->
+            combine(
+                serverConfigRepository.getAll(),
+                appPreferencesRepository.appPreferencesFlow,
+            ) { serverConfigs, appPreferences ->
                 _uiState.update {
+                    val selectedConfigId = getSelectedConfigId(it, appPreferences, serverConfigs)
                     it.copy(
                         serverConfigs = serverConfigs,
-                        selectedConfigId = it.selectedConfigId ?: serverConfigs.firstOrNull()?.id,
+                        selectedConfigId = selectedConfigId,
                     )
                 }
-            }
+            }.collect()
         }
         checkPermissions()
+    }
+
+    private suspend fun getSelectedConfigId(
+        it: UiState,
+        appPreferences: AppPreferences,
+        serverConfigs: List<ServerConfig>,
+    ): Long? {
+        if (it.selectedConfigId != null) {
+            return it.selectedConfigId
+        }
+        if (appPreferences.selectedServerConfigId != null) {
+            return appPreferences.selectedServerConfigId
+        }
+        val first = serverConfigs.firstOrNull()
+        if (first != null) {
+            appPreferencesRepository.updateSelectedServerConfigId(first.id)
+            return first.id
+        }
+        return null
     }
 
     fun checkPermissions(): Pair<Boolean, Boolean> {
@@ -83,6 +106,9 @@ class HomeScreenViewModel @Inject constructor(
 
     fun setSelectedConfig(serverConfig: ServerConfig) {
         _uiState.update { it.copy(selectedConfigId = serverConfig.id) }
+        viewModelScope.launch {
+            appPreferencesRepository.updateSelectedServerConfigId(serverConfig.id)
+        }
     }
 
     fun setShowAddServerConfigDialog(show: Boolean, editConfig: ServerConfig? = null) {
