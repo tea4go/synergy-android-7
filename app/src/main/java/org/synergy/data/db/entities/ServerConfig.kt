@@ -11,8 +11,8 @@ data class ServerConfig(
     val name: String = "",
     @ColumnInfo(name = "client_name") val clientName: String = "",
     @ColumnInfo(name = "host") val serverHost: String = "",
-    @ColumnInfo(name = "port") val serverPort: String = "", // to allow blank input
-    @ColumnInfo(name = "device_name") val inputDeviceName: String = "",
+    @ColumnInfo(name = "port") val serverPort: String = "24800", // to allow blank input
+    @ColumnInfo(name = "device_name") val inputDeviceName: String = "touchscreen",
 ) {
     @delegate:Ignore
     val serverPortInt: Int by lazy { serverPort.toIntOrNull() ?: 0 }
